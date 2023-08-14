@@ -1,6 +1,6 @@
 [package]
 name = "baby-emulator"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Jason Alexander <jasonalexander.dev@gmail.com>"]
 edition = "2021"
 description = "An emulation library of the Manchester SSEM 'Baby'"
