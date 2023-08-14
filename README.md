@@ -11,12 +11,11 @@ computer.
 ## Explaination
 
 The Manchester "Baby" was the first computer to store both its program
-code and data in a common random-accessible memory, it is for this 
-reason the Baby is considdered the first machine to run true software, 
+code and data in a common randomly-accessible memory, it is for this 
+reason the Baby is considered the first machine to run "true" software, 
 providing a familiar (abeit, primitive) programming environment to anyone 
-familiar with modern assembly programming, this library can be included 
-in a variety of softwareand platforms allowing emulation functionality 
-of this historic machine. 
+familiar with assembly, this library can be included  in a variety of 
+software and platforms allowing emulation functionality of this historic machine. 
 
 ## Installation 
 
