@@ -1,182 +1,44 @@
-use std::ops::Neg;
+//! Manchester Small-Scale Experimental Machine "Baby" Emulator Library
+//! 
+//! This provides a collections of types and methods for emulating 
+//! the [Machester Baby](https://www.scienceandindustrymuseum.org.uk/objects-and-stories/baby-and-modern-computing) the first program stored 
+//! computer; this was the first machine to have RAM and thus the 
+//! first to execute software, providing a familiar (abeit, primitive) 
+//! programming environment to anyone familiar with modern assembly 
+//! programming, this library can be included in a variety of software
+//! and platforms allowing emulation functionality of this historic machine. 
+//! 
+//! The core of this library is [core::BabyModel], this struct has 
+//! fields representing all of the Baby's internal registers and 
+//! 32 word memory, you can initialise this struct with an array of 
+//! [i32] (the Baby performed 2's compliment arithmetic) and a size 
+//! of 32, this array can contain the program instructions starting 
+//! at position 0 (see [core::instructions::BabyInstruction] for 
+//! documentation on operands). 
+//! 
+//! # Example  
+//! ```
+//! use baby_emulator::core::BabyModel;
+//! use baby_emulator::errors::{BabyError, BabyErrors};
+//! 
+//! 
+//! fn main() {
+//!     let model = BabyModel::new_example_program();
+//!     let mut last_model = BabyModel::new();
+//!     let mut result = model.execute();
+//!     while let Ok(new_model) = result {
+//!         last_model = new_model.clone();
+//!         result = new_model.execute();
+//!     }
+//!     match result {
+//!         Err(BabyErrors::Stop(_)) => println!("{}", last_model.accumulator),
+//!         _ => println!("Something went wrong. ")
+//!     }
+//! }
+//! ```
 
-pub trait BabyError {
-    fn get_descriptor(&self) -> String;
-    fn at(&self) -> u16;
-}
 
-pub struct OperandAddressOutOfRange {
-    instruction: BabyInstruction,
-    at: u16,
-    operand: u16
-}
-
-impl BabyError for OperandAddressOutOfRange {
-    fn get_descriptor(&self) -> String {
-        format!("Operand points to an address outside of the allocated memory; for instruction {}; at address {:#06x}; operand {};\n", self.instruction.get_instr_description(), self.at, self.operand)
-    }
-
-    fn at(&self) -> u16 {
-        self.at
-    }
-}
-
-pub enum BabyInstruction {
-    Jump(u16),
-    RelativeJump(u16),
-    Negate(u16),
-    Store(u16),
-    Subtract(u16),
-    SkipNextIfNegative,
-    Stop
-}
-
-impl BabyInstruction {
-    fn get_instr_description(&self) -> String {
-        match self {
-            BabyInstruction::Jump(_) => "jump instruction".to_owned(),
-            BabyInstruction::RelativeJump(_) => "relative jump instruction".to_owned(),
-            BabyInstruction::Negate(_) => "negate instruction".to_owned(),
-            BabyInstruction::Store(_) => "store instruction".to_owned(),
-            BabyInstruction::Subtract(_) => "subtract instruction".to_owned(),
-            BabyInstruction::SkipNextIfNegative => "skip next if negative instruction".to_owned(),
-            BabyInstruction::Stop => "jump instruction".to_owned(),
-        }
-    }
-}
-
-impl BabyInstruction {
-    pub fn from_number(value: u16) -> BabyInstruction {
-        let opcode = value >> 13;
-        let operand = value & 0x1FFF;
-        match opcode {
-            0b000 => BabyInstruction::Jump(operand),
-            0b100 => BabyInstruction::RelativeJump(operand),
-            0b010 => BabyInstruction::Negate(operand),
-            0b110 => BabyInstruction::Store(operand),
-            0b001 | 0b101 => BabyInstruction::Subtract(operand),
-            0b011 => BabyInstruction::SkipNextIfNegative,
-            _ => BabyInstruction::Stop,
-        }
-    }
-}
-
-pub struct BabyModel {
-    pub main_store: [i32; 32],
-    pub accumulator: i32,
-    pub instruction_address: u16,
-    pub instruction: u16,
-}
-
-impl BabyModel {
-    pub fn new() -> BabyModel {
-        BabyModel {
-            main_store: [0; 32],
-            accumulator: 0,
-            instruction_address: 0,
-            instruction: 0,
-        }
-    }
-
-    pub fn new_with_program(main_store: [i32; 32]) -> BabyModel {
-        BabyModel { 
-            main_store,
-            accumulator: 0,
-            instruction_address: 0,
-            instruction: 0
-        }
-    }
-
-    pub fn jump(&self, addr: u16) -> BabyModel {
-        let address = self.main_store[addr as usize] & 0xFFFF;
-        BabyModel { 
-            main_store: self.main_store.clone(),
-            accumulator: self.accumulator,
-            instruction_address: address as u16,
-            instruction: self.instruction
-        }
-    }
-
-    pub fn relative_jump(&self, addr: u16) -> BabyModel {
-        let address = self.main_store[addr as usize] & 0xFFFF;
-        BabyModel { 
-            main_store: self.main_store.clone(),
-            accumulator: self.accumulator,
-            instruction_address: self.instruction_address + (address as u16),
-            instruction: self.instruction
-        }
-    }
-
-    pub fn negate(&self, addr: u16) -> BabyModel {
-        let value = self.main_store[addr as usize].neg();
-        BabyModel { 
-            main_store: self.main_store.clone(),
-            accumulator: value,
-            instruction_address: self.instruction_address + 1,
-            instruction: self.instruction
-        }
-    }
-
-    pub fn store(&self, addr: u16) -> BabyModel {
-        let mut main_store = self.main_store.clone();
-        let address = self.main_store[addr as usize] & 0xFFFF;
-        main_store[address as usize] = self.accumulator;
-        BabyModel { 
-            main_store,
-            accumulator: self.accumulator,
-            instruction_address: self.instruction_address + 1,
-            instruction: self.instruction
-        }
-    }
-
-    pub fn subtract(&self, addr: u16) -> BabyModel {
-        let value = self.main_store[addr as usize] & 0xFFFF;
-        BabyModel { 
-            main_store: self.main_store.clone(),
-            accumulator: self.accumulator - value,
-            instruction_address: self.instruction_address + 1,
-            instruction: self.instruction
-        }
-    }
-
-    pub fn test(&self) -> BabyModel {
-        let next = if self.accumulator.is_negative() { 2 }
-        else { 1 };
-        BabyModel { 
-            main_store: self.main_store.clone(),
-            accumulator: self.accumulator,
-            instruction_address: self.instruction_address + next,
-            instruction: self.instruction
-        }
-    }
-
-    pub fn core_dump(&self) -> String {
-        let mut res = format!("Accumulator: {:#010x}; Instruction Register: {:#06x};\n", self.accumulator, self.instruction);
-        res += &format!("Instruction Address: {:#06x}; Main Store: \n", self.instruction_address);
-        for i in 0..8 {
-            let offset = i * 4;
-            for i2 in 0..4 {
-                let addr = i2 + offset;
-                res += &format!("{:#04x}: {:#010x}; ", addr, self.main_store[addr]);
-            }
-            res += "\n";
-        }
-        res += "\n";
-        return res;
-    }
-}
-
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+/// Contains potential errors thrown during emulation. 
+pub mod errors;
+/// Contains the core models and emulation functionality. 
+pub mod core;

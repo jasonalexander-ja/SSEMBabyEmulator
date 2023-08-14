@@ -1,7 +1,15 @@
 [package]
 name = "baby-emulator"
 version = "0.1.0"
+authors = ["Jason Alexander <jasonalexander.dev@gmail.com>"]
 edition = "2021"
+description = "An emulation library of the Manchester SSEM 'Baby'"
+readme = "README.md"
+repository = "https://github.com/jasonalexander-ja/SSEMBabyEmulator"
+license = "MIT"
+keywords = ["vintage_computing", "emulation"]
+
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
