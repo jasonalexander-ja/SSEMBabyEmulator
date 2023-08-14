@@ -1,4 +1,4 @@
-//! Manchester Small-Scale Experimental Machine "Baby" Emulator Library
+//! # Manchester Small-Scale Experimental Machine "Baby" Emulator Library
 //! 
 //! This provides a collections of types and methods for emulating 
 //! the [Machester Baby](https://www.scienceandindustrymuseum.org.uk/objects-and-stories/baby-and-modern-computing) the first program stored 
@@ -16,7 +16,7 @@
 //! at position 0 (see [core::instructions::BabyInstruction] for 
 //! documentation on operands). 
 //! 
-//! # Example  
+//! ## Example  
 //! ```
 //! use baby_emulator::core::BabyModel;
 //! use baby_emulator::errors::{BabyError, BabyErrors};
