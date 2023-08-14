@@ -25,7 +25,7 @@
 //! 
 //! Cargo.toml:
 //! ```
-//! baby-emulator = "0.1.2"
+//! baby-emulator = "0.1.3"
 //! ```
 //! 
 //! ## Example  

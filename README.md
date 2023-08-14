@@ -26,7 +26,7 @@ cargo add baby-emulator
 
 Cargo.toml:
 ```
-baby-emulator = "0.1.2"
+baby-emulator = "32"
 ```
 
 ## Example 
