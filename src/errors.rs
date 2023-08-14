@@ -18,6 +18,13 @@ pub enum BabyErrors {
 }
 
 impl BabyErrors {
+
+    /// Gets the inner error. 
+    /// 
+    /// This method gets the inner [BabyError] derived error allowing for 
+    /// immediate access to the root errors methods detailing the errors 
+    /// description and metadata. 
+    /// 
     pub fn get_baby_error(&self) -> &impl BabyError {
         match self {
             BabyErrors::Stop(s) => s
@@ -44,8 +51,8 @@ impl BabyError for BabyErrors {
 /// 
 /// Contains the position in memory where it was encountered, 
 /// this is used as an error so that when the emulator is ran in a loop 
-/// any errors can break out of that loop and then checked programatically by the 
-/// calling program, and appropriate action taken.
+/// any errors can break out of that loop and then checked programatically 
+/// by the calling program, and appropriate action taken.
 /// 
 /// # Example 
 /// ```
@@ -65,9 +72,8 @@ impl BabyError for BabyErrors {
 /// ```
 #[derive(Clone, Copy)]
 pub struct Stop {
-    pub instruction: BabyInstruction,
-    pub at: u16,
-    pub operand: u16
+    /// The memory address where the stop was encountered. 
+    pub at: u16
 }
 
 impl BabyError for Stop {
@@ -76,7 +82,7 @@ impl BabyError for Stop {
     }
     
     fn get_instruction(&self) -> BabyInstruction {
-        self.instruction
+        BabyInstruction::Stop
     }
 
     fn at(&self) -> u16 {

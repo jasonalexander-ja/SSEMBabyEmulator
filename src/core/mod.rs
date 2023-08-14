@@ -7,10 +7,13 @@ use instructions::BabyInstruction;
 pub mod instructions;
 
 
-/// A result from [`BabyModel`] executing an instruction. 
+/// The number of words in the memory used globally.  
+const MEMORY_WORDS: usize = 32;
+
+/// A result from [BabyModel] executing an instruction. 
 /// 
-/// Just a [`Result`] type, which is either a [`BabyModel`] of the updated model
-/// post executing an instruction or a [`BabyErrors`] containing details of an error. 
+/// Just a [Result] type, which is either a [BabyModel] of the updated model
+/// post executing an instruction or a [BabyErrors] containing details of an error. 
 /// 
 /// # Example
 /// ```
@@ -30,7 +33,7 @@ type InstrResult = Result<BabyModel, BabyErrors>;
 pub struct BabyModel {
     /// The memory (RAM), this is just 32 words of 32 bits, 
     /// originally famously stored on a Williams Tube.  
-    pub main_store: [i32; 32],
+    pub main_store: [i32; MEMORY_WORDS],
     /// The register where all mathematical results 
     /// are stored (negations and subtractions). 
     pub accumulator: i32,
@@ -46,17 +49,23 @@ impl BabyModel {
     /// Creates a new model with all zeros. 
     pub fn new() -> BabyModel {
         BabyModel {
-            main_store: [0; 32],
+            main_store: [0; MEMORY_WORDS],
             accumulator: 0,
             instruction_address: 0,
             instruction: 0,
         }
     }
 
-    /// Creates a new model with a specified program. 
+    /// Creates a new model with a specified memory. 
     /// 
-    /// Initialised as to start executing at the start of the memory. 
-    pub fn new_with_program(main_store: [i32; 32]) -> BabyModel {
+    /// Initialised as to start executing at the start of the memory, 
+    /// specified memory can contain program code to be executed.  
+    /// 
+    /// # Parameters 
+    /// 
+    /// * `main_store` - The custom memory to be initialised with. 
+    /// 
+    pub fn new_with_program(main_store: [i32; MEMORY_WORDS]) -> BabyModel {
         BabyModel { 
             main_store,
             accumulator: 0,
@@ -91,16 +100,15 @@ impl BabyModel {
     /// ```
     /// 
     pub fn new_example_program() -> BabyModel {
-        let mut main_store = [0; 32];
-
-        main_store[0] = BabyInstruction::Negate.to_number(5);
-        main_store[1] = BabyInstruction::Subtract.to_number(5);
-        main_store[2] = BabyInstruction::Store.to_number(6);
-        main_store[3] = BabyInstruction::Negate.to_number(6);
-
-        main_store[4] = BabyInstruction::Stop.to_number(0);
+        let instrs = vec![
+            (BabyInstruction::Negate, 5),
+            (BabyInstruction::Subtract, 5),
+            (BabyInstruction::Store, 6),
+            (BabyInstruction::Negate, 6),
+            (BabyInstruction::Stop, 0)
+        ];
+        let mut main_store = BabyInstruction::to_numbers(instrs);
         main_store[5] = 5;
-        main_store[5] = 0;
 
         BabyModel {
             main_store,
@@ -114,12 +122,12 @@ impl BabyModel {
     /// 
     /// Decodes the instruction value in the instruction register and performs 
     /// the relevant operation on the data within the model, will return all the
-    /// updated data in a new [`Ok(BabyModel)`] assuming no errors encountered.  
+    /// updated data in a new [Ok(BabyModel)] assuming no errors encountered.  
     /// 
     /// # Returns 
-    /// - [`Ok(InstrResult)`]: A new model instance with all data updated as per 
+    /// - `Ok(InstrResult)`: A new model instance with all data updated as per 
     ///     the instruction, loaded with the next instruction. 
-    /// - [`Err(BabyErrors)`]: An enum detailing errors encountered when 
+    /// - `Err(BabyErrors)`: An enum detailing errors encountered when 
     ///     executing the instruction. 
     /// 
     /// # Example 
@@ -156,9 +164,7 @@ impl BabyModel {
             BabyInstruction::Subtract => self.subtract(operand_value),
             BabyInstruction::SkipNextIfNegative => self.test(),
             BabyInstruction::Stop => return Err(BabyErrors::Stop(Stop {
-                instruction: BabyInstruction::Stop,
                 at: self.instruction_address,
-                operand: 0
             }))
         };
         return Ok(res);
@@ -166,7 +172,7 @@ impl BabyModel {
 
     /// Carries out a jump to a specified address. 
     /// 
-    /// Will update the [BabyModel].instruction_address least significant 5 bits 
+    /// Will update the [BabyModel].`instruction_address` least significant 5 bits 
     /// to the last significant 5 bits of `address`, means jumping cannot be indexed outside
     /// of the memory, program execution will then proceed from this address. 
     /// 
@@ -188,14 +194,14 @@ impl BabyModel {
 
     /// Carries out a jump to the instruction address plus an offset. 
     /// 
-    /// This will add the [BabyModel].instruction_address to the offset, then set 
-    /// the [BabyModel].instruction_address equal to the least significant 5 bits 
+    /// This will add the [BabyModel].`instruction_address` to the offset, then set 
+    /// the [BabyModel].`instruction_address` equal to the least significant 5 bits 
     /// of the result, this allows the jump to "loop" back to the start 
     /// of the memory, program execution will then proceed from this address. 
     /// 
     /// # Arguments 
     /// 
-    /// * `offset` - The value to offset the [BabyModel].instruction_address to. 
+    /// * `offset` - The value to offset the [BabyModel].`instruction_address` to. 
     /// 
     pub fn relative_jump(&self, offset: i32) -> BabyModel {
         let main_store = self.main_store.clone();
@@ -214,7 +220,7 @@ impl BabyModel {
     /// Negates (adds or removes the "-") the specified value and 
     /// stores it in the accumulator, returning the updated model. 
     /// 
-    /// Adds 1 to the [BabyModel].instruction_address and keeps only
+    /// Adds 1 to the [BabyModel].`instruction_address` and keeps only
     /// the least significant 5 bits as to only index within the 
     /// allocated memory. 
     /// 
@@ -238,9 +244,9 @@ impl BabyModel {
     /// 
     /// Takes the least significant 5 bits of `address` uses this to 
     /// index into the memory, as to not index outside of the memory 
-    /// and stores the value in [BabyModel].accumulator. 
+    /// and stores the value in [BabyModel].`accumulator`. 
     /// 
-    /// Adds 1 to the [BabyModel].instruction_address and keeps only
+    /// Adds 1 to the [BabyModel].`instruction_address` and keeps only
     /// the least significant 5 bits as to only index within the 
     /// allocated memory. 
     /// 
@@ -263,13 +269,13 @@ impl BabyModel {
 
     /// Subtracts the specified value from the accumulator. 
     /// 
-    /// Subtracts the specified value from the accumulator,
-    /// storing the result back to the accumulator.  
+    /// Subtracts the specified value from the accumulator, storing 
+    /// the result back to the accumulator.  
     /// 
-    /// Adds 1 to the [BabyModel].instruction_address and keeps only
+    /// Adds 1 to the [BabyModel].`instruction_address` and keeps only
     /// the least significant 5 bits as to only index within the allocated 
     /// memory, using this to get the next instruction from the memory and 
-    /// storing it in [BabyModel].instruction register. 
+    /// storing it in [BabyModel].`instruction` register. 
     /// 
     /// # Arguments
     /// 
@@ -290,10 +296,10 @@ impl BabyModel {
 
     /// Skips the next instruction address if the accumulator is negative. 
     /// 
-    /// Adds 1 to the [BabyModel].instruction_address if the [BabyModel].accumulator 
+    /// Adds 1 to the [BabyModel].`instruction_address` if the [BabyModel].`accumulator` 
     /// is not negative and 2 if it is and keeps only the least significant 5 bits 
     /// as to only index within the allocated memory, using this to get the next 
-    /// instruction from the memory and storing it in [BabyModel].instruction register. 
+    /// instruction from the memory and storing it in [BabyModel].`instruction` register. 
     /// 
     /// # Arguments
     /// 
@@ -340,7 +346,7 @@ impl BabyModel {
         let mut res = format!("Accumulator: {:#010x}; Instruction Register: {:#06x};\n", self.accumulator, self.instruction);
         res += &format!("Instruction Address: {:#06x}; Main Store: \n", self.instruction_address);
         
-        for i in 0..8 {
+        for i in 0..(MEMORY_WORDS / 4) {
             let offset = i * 4;
             for i2 in 0..4 {
                 let addr = i2 + offset;
