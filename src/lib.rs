@@ -149,3 +149,5 @@
 pub mod errors;
 /// Contains the core models and emulation functionality. 
 pub mod core;
+/// Contains types and functionality for assembling Baby asm. 
+pub mod assembler;

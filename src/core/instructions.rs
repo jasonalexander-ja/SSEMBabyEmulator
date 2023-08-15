@@ -24,7 +24,9 @@ pub enum BabyInstruction {
     /// negative value. 
     SkipNextIfNegative,
     /// Stop. 
-    Stop
+    Stop,
+    /// A helper instruction denoting a program data in memory. 
+    AbsoluteValue(i32),
 }
 
 impl BabyInstruction {
@@ -38,6 +40,7 @@ impl BabyInstruction {
             BabyInstruction::Subtract => "subtract instruction".to_owned(),
             BabyInstruction::SkipNextIfNegative => "skip next if negative instruction".to_owned(),
             BabyInstruction::Stop => "jump instruction".to_owned(),
+            BabyInstruction::AbsoluteValue(v) => format!("absolute value {}", v) 
         }
     }
     
@@ -91,15 +94,16 @@ impl BabyInstruction {
     /// * `operand` - The operand memory address to be included in the program instruction. 
     /// 
     pub fn to_number(&self, operand: u16) -> i32 {
-        (match self {
-            BabyInstruction::Jump => (0b000 << 13) | (operand & 0x1F),
-            BabyInstruction::RelativeJump => (0b100 << 13) | (operand & 0x1F),
-            BabyInstruction::Negate => (0b010 << 13) | (operand & 0x1F),
-            BabyInstruction::Store => (0b110 << 13) | (operand & 0x1F),
-            BabyInstruction::Subtract => (0b001 << 13) | (operand & 0x1F),
-            BabyInstruction::SkipNextIfNegative => 0b011 << 13,
-            BabyInstruction::Stop => 0b111 << 13,
-        } as i32)
+        match self {
+            BabyInstruction::Jump => (0b000 << 13) | (operand & 0x1F) as i32,
+            BabyInstruction::RelativeJump => (0b100 << 13) | (operand & 0x1F) as i32,
+            BabyInstruction::Negate => (0b010 << 13) | (operand & 0x1F) as i32,
+            BabyInstruction::Store => (0b110 << 13) | (operand & 0x1F) as i32,
+            BabyInstruction::Subtract => (0b001 << 13) | (operand & 0x1F) as i32,
+            BabyInstruction::SkipNextIfNegative => 0b011 << 13 as i32,
+            BabyInstruction::Stop => 0b111 << 13 as i32,
+            BabyInstruction::AbsoluteValue(v) => *v
+        }
     }
 
     /// Encodes an array of instructions into an array of program instructions. 

@@ -67,11 +67,11 @@ in `core::instructions::BabyInstructions` enum:
 
 | Binary   | Instruction Enum   | Description                                                                                                                                                    |
 |----------|--------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 000      | Jump               | Jump to the instruction at the address obtained from the specified memory address S[a] (absolute unconditional jump)                                     |
-| 100      | RelativeJump       | Jump to the instruction at the program counter plus (+) the relative value obtained from the specified memory address S[a] (relative unconditional jump) |
-| 010      | Negate             | Take the number from the specified memory address S, negate it, and load it into the accumulator                                                         |
-| 110      | Store              | Store the number in the accumulator to the specified memory address S                                                                                    |
-| 001\|101 | Subtract           | Subtract the number at the specified memory address S from the value in accumulator, and store the result in the accumulator                             |
+| 000      | Jump               | Jump to the instruction at the address obtained from the specified memory address (absolute unconditional jump)                                     |
+| 100      | RelativeJump       | Jump to the instruction at the program counter plus (+) the relative value obtained from the specified memory address (relative unconditional jump) |
+| 010      | Negate             | Take the number from the specified memory address, negate it, and load it into the accumulator                                                         |
+| 110      | Store              | Store the number in the accumulator to the specified memory address                                                                                    |
+| 001\|101 | Subtract           | Subtract the number at the specified memory address from the value in accumulator, and store the result in the accumulator                             |
 | 011      | SkipNextIfNegative | Skip next instruction if the accumulator contains a negative value                                                                                       |
 | 111      | Stop               | Stop                                                                                                                                                     |
 

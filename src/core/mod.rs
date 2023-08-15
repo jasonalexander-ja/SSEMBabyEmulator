@@ -8,7 +8,7 @@ pub mod instructions;
 
 
 /// The number of words in the memory used globally.  
-const MEMORY_WORDS: usize = 32;
+pub const MEMORY_WORDS: usize = 32;
 
 /// A result from [BabyModel] executing an instruction. 
 /// 
@@ -105,10 +105,10 @@ impl BabyModel {
             (BabyInstruction::Subtract, 5),
             (BabyInstruction::Store, 6),
             (BabyInstruction::Negate, 6),
-            (BabyInstruction::Stop, 0)
+            (BabyInstruction::Stop, 0),
+            (BabyInstruction::AbsoluteValue(5), 0)
         ];
-        let mut main_store = BabyInstruction::to_numbers(instrs);
-        main_store[5] = 5;
+        let main_store = BabyInstruction::to_numbers(instrs);
 
         BabyModel {
             main_store,
@@ -165,7 +165,8 @@ impl BabyModel {
             BabyInstruction::SkipNextIfNegative => self.test(),
             BabyInstruction::Stop => return Err(BabyErrors::Stop(Stop {
                 at: self.instruction_address,
-            }))
+            })),
+            _ => self.clone()
         };
         return Ok(res);
     }
