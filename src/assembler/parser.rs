@@ -264,7 +264,7 @@ pub enum LineType {
 
 impl LineType {
 
-    /// Tries tp parse a line of Baby asm 
+    /// Tries to parse a line of Baby asm 
     /// 
     /// Returns an instance of [LineType] corresponding to the 
     /// line type and metadata. Each line can either be an absolute 
@@ -274,7 +274,7 @@ impl LineType {
     /// Will return an instance of [LineParseError] if an error is 
     /// encountered, containing metatdata on the error encountered.  
     /// 
-    pub fn parse_line(line: String, og_notation: bool) -> Result<LineType, LineParseError> {
+    pub fn parse_line(line: &String, og_notation: bool) -> Result<LineType, LineParseError> {
         let line = line.trim().to_lowercase();
         let line = Self::strip_comments(&line);
         match line {
@@ -283,6 +283,50 @@ impl LineType {
             l => if og_notation { Self::parse_instruction(l) } 
                 else { Self::parse_instruction_ogn(l) },
         }
+    }
+
+    /// Tries to parse a vector of lines of Baby asm 
+    /// 
+    /// Returns a list of [LineType] corresponding to the 
+    /// line type and metadata. Each line can either be an absolute 
+    /// value, a instruction, or a tag to reference back to a location 
+    /// in the program stack. 
+    /// 
+    /// Will return a tuple of [usize] and [LineParseError] if an error is 
+    /// encountered, containing the metatdata on the error encountered and the
+    /// index of the line it was found on. 
+    /// 
+    pub fn parse_lines(lines: Vec<String>, og_notation: bool) -> Result<Vec<LineType>, (usize, LineParseError)> {
+        let mut res: Vec<LineType> = vec![];
+        for (index, line) in lines.iter().enumerate() {
+            match Self::parse_line(line, og_notation) {
+                Ok(l) => res.push(l),
+                Err(e) => return Err((index, e))
+            }
+        }
+        Ok(res)
+    }
+
+    /// Splits an asm string into lines, removes the blank lines and
+    /// tries to parse each one. 
+    /// 
+    /// Basically a wrapper for [LineType::parse_lines]. 
+    /// 
+    /// Returns a list of [LineType] corresponding to the line type 
+    /// and metadata. Each line can either be an absolute value, a 
+    /// instruction, or a tag to reference back to a location in the 
+    /// program stack. 
+    /// 
+    /// Will return a tuple of [usize] and [LineParseError] if an error is 
+    /// encountered, containing the metatdata on the error encountered and the
+    /// index of the line it was found on. 
+    /// 
+    pub fn parse_asm_string(asm: &String, og_notation: bool) -> Result<Vec<LineType>, (usize, LineParseError)> {
+        let lines: Vec<String> = asm.lines()
+            .map(Self::strip_comments)
+            .filter(|l| !l.is_empty())
+            .collect();
+        Self::parse_lines(lines, og_notation)
     }
 
     /// Strips comments from a line of Baby asm. 

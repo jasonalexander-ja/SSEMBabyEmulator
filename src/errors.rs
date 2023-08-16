@@ -57,18 +57,19 @@ impl BabyError for BabyErrors {
 /// # Example 
 /// ```
 /// use baby_emulator::core::BabyModel;
-/// use baby_emulator::errors::{BabyError, BabyErrors};
+/// use baby_emulator::errors::BabyError;
 /// 
-/// fn run_model(model: BabyModel) {
-///     let mut result = model.execute();
-///     while let Ok(new_model) = result {
-///         result = new_model.execute();
-///     }
-///     match result {
-///         Err(BabyErrors::Stop(_)) => println!("Sucess! "),
-///         _ => println!("Something went wrong. ")
+/// let mut model = BabyModel::new_example_program();
+/// loop {
+///     model = match model.execute() {
+///         Ok(m) => m,
+///         Err(e) => {
+///             println!("{}", e.get_descriptor());
+///             break
+///         }
 ///     }
 /// }
+/// println!("{}", model.core_dump());
 /// ```
 #[derive(Clone, Copy)]
 pub struct Stop {

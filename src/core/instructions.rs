@@ -1,3 +1,16 @@
+//! # Baby Instructions 
+//! 
+//! Just a library for the helper type [BabyInstruction][crate::core::instructions::BabyInstruction]
+//! that is an enum containing all the possible entries in a program stack, this is 
+//! all 7 instructions plus [BabyInstruction::AbsoluteValue][crate::core::instructions::BabyInstruction::AbsoluteValue]
+//! which is any program data. 
+//! 
+//! This type has has several methods for helping converting between 
+//! instances of the enum and numerical values that can be put into 
+//! an array that can be used to instantiate a new baby model with 
+//! a program loaded into the stack. 
+
+
 use crate::core::MEMORY_WORDS;
 
 
@@ -110,7 +123,7 @@ impl BabyInstruction {
     /// 
     /// Takes a vector of tuples containing [BabyInstruction] and the memory 
     /// address operand ([u16]), returns an array of program instruction values, 
-    /// this can be used to initialise [crate::core::BabyModel]. 
+    /// this can be used to initialise [BabyModel][crate::core::BabyModel]. 
     /// 
     /// # Parameters
     /// 

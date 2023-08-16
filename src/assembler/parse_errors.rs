@@ -2,7 +2,7 @@ use super::parser::Instruction;
 
 
 /// Defines common behaviour for all errors thrown whilst parsing Baby asm. 
-trait ParseError {
+pub trait ParseError {
     /// Returns a string describing an error thrown. 
     fn describe(&self) -> String;
 }
