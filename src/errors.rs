@@ -13,7 +13,7 @@ pub trait BabyError: Clone + Copy {
 /// An enum containing potential errors allowing them to be handled. 
 #[derive(Clone, Copy)]
 pub enum BabyErrors {
-    /// The emulator has encountered a stop command.  
+    /// The emulator has encountered a stop instruction.  
     Stop(Stop)
 }
 
@@ -47,7 +47,7 @@ impl BabyError for BabyErrors {
     }
 }
 
-/// An error thrown when the emulator encounters a stop command. 
+/// An error thrown when the emulator encounters a stop instruction. 
 /// 
 /// Contains the position in memory where it was encountered, 
 /// this is used as an error so that when the emulator is ran in a loop 
@@ -78,7 +78,7 @@ pub struct Stop {
 
 impl BabyError for Stop {
     fn get_descriptor(&self) -> String {
-        format!("Program stop command encountered at {:#06x}; \n", self.at)
+        format!("Program stop instruction encountered at {:#06x}; \n", self.at)
     }
     
     fn get_instruction(&self) -> BabyInstruction {

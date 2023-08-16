@@ -2,7 +2,7 @@ use super::parse_errors::{
     LineParseError,
     TagError,
     AbsoluteError,
-    CommandError,
+    InstructionError,
     ValueParseError,
 };
 
@@ -42,35 +42,50 @@ impl Value {
         }
     }
 
-    fn parse_hex(v: String) -> Result<Value, ValueParseError> {
+    /// Tries to parse a hex string. 
+    /// 
+    /// Returns a [ValueParseError] if it fails. 
+    pub fn parse_hex(v: String) -> Result<Value, ValueParseError> {
         match i32::from_str_radix(&v, 16) {
             Ok(v) => Ok(Value::Value(v)),
             Err(v) => Err(ValueParseError::InvalidHex(v.to_string()))
         }
     }
 
-    fn parse_decimal(v: String) -> Result<Value, ValueParseError> {
+    /// Tries to parse a decimal string. 
+    /// 
+    /// Returns a [ValueParseError] if it fails. 
+    pub fn parse_decimal(v: String) -> Result<Value, ValueParseError> {
         match i32::from_str_radix(&v, 10) {
             Ok(v) => Ok(Value::Value(v)),
             Err(v) => Err(ValueParseError::InvalidDecimal(v.to_string()))
         }
     }
 
-    fn parse_octal(v: String) -> Result<Value, ValueParseError> {
+    /// Tries to parse an octal string. 
+    /// 
+    /// Returns a [ValueParseError] if it fails. 
+    pub fn parse_octal(v: String) -> Result<Value, ValueParseError> {
         match i32::from_str_radix(&v, 8) {
             Ok(v) => Ok(Value::Value(v)),
             Err(v) => Err(ValueParseError::InvalidOctal(v.to_string()))
         }
     }
 
-    fn parse_binary(v: String) -> Result<Value, ValueParseError> {
+    /// Tries to parse a binary string. 
+    /// 
+    /// Returns a [ValueParseError] if it fails. 
+    pub fn parse_binary(v: String) -> Result<Value, ValueParseError> {
         match i32::from_str_radix(&v, 2) {
             Ok(v) => Ok(Value::Value(v)),
             Err(v) => Err(ValueParseError::InvalidBinary(v.to_string()))
         }
     }
 
-    fn parse_tag_name(v: String) -> Result<Value, ValueParseError> {
+    /// Tries to parse a tag reference. 
+    /// 
+    /// Returns a [ValueParseError] if it contains any whitespace. 
+    pub fn parse_tag_name(v: String) -> Result<Value, ValueParseError> {
         if !v.contains(char::is_whitespace) {
             return Ok(Value::Tag(v))
         }
@@ -79,9 +94,9 @@ impl Value {
 
 }
 
-/// Represents all the commands. 
+/// Represents all the instructions. 
 #[derive(Clone)]
-pub enum Command {
+pub enum Instruction {
     /// See [crate::core::instructions::BabyInstruction::Jump].
     Jump(Value),
     /// See [crate::core::instructions::BabyInstruction::RelativeJump].
@@ -98,11 +113,11 @@ pub enum Command {
     Stop,
 }
 
-impl Command {
+impl Instruction {
 
-    /// Parses Baby asm commands & operands using modern notation 
+    /// Parses Baby asm instruction & operands using modern notation 
     /// 
-    /// # Possible Commands 
+    /// # Possible Instruction 
     /// | Asm   | Description                                                                                                                                           |
     /// |-------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
     /// | JMP # | Jump to the instruction at the address obtained from the specified memory address # (absolute unconditional jump)                                     |
@@ -115,32 +130,32 @@ impl Command {
     /// 
     /// * # is a always a memory address, and will try to be parsed into a [Value]. 
     /// 
-    pub fn parse(command: &str) -> Result<Command, CommandError> {
-        let command = command.trim().to_lowercase();
+    pub fn parse(instruction: &str) -> Result<Instruction, InstructionError> {
+        let instruction = instruction.trim().to_lowercase();
         let v = Value::Value(0);
-        match command {
+        match instruction {
 
             c if c.starts_with("jmp ") => 
-                Self::make_command(Command::Jump(v), c.replace("jmp ", "")),
+                Self::make_instruction(Instruction::Jump(v), c.replace("jmp ", "")),
             c if c.starts_with("jrp ") => 
-                Self::make_command(Command::RelativeJump(v), c.replace("jrp ", "")),
+                Self::make_instruction(Instruction::RelativeJump(v), c.replace("jrp ", "")),
             c if c.starts_with("ldn ") => 
-                Self::make_command(Command::Negate(v), c.replace("ldn ", "")),
+                Self::make_instruction(Instruction::Negate(v), c.replace("ldn ", "")),
             c if c.starts_with("sto ") => 
-                Self::make_command(Command::Store(v), c.replace("sto ", "")),
+                Self::make_instruction(Instruction::Store(v), c.replace("sto ", "")),
             c if c.starts_with("sub ") => 
-                Self::make_command(Command::Subtract(v), c.replace("sub ", "")),
+                Self::make_instruction(Instruction::Subtract(v), c.replace("sub ", "")),
 
-            c if c.starts_with("cmp") => Ok(Command::Test),
-            c if c.starts_with("stp") => Ok(Command::Stop),
+            c if c.starts_with("cmp") => Ok(Instruction::Test),
+            c if c.starts_with("stp") => Ok(Instruction::Stop),
 
-            _ => Err(CommandError::UnkownCommand(command.to_string()))
+            _ => Err(InstructionError::UnkownInstruction(instruction.to_string()))
         }
     }
 
-    /// Parses Baby asm commands & operands using original notation 
+    /// Parses Baby asm instructions & operands using original notation 
     /// 
-    /// # Possible Commands 
+    /// # Possible Instructions 
     /// | Asm       | Description                                                                                                                                           |
     /// |-----------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
     /// | #, Cl     | Jump to the instruction at the address obtained from the specified memory address # (absolute unconditional jump)                                     |
@@ -153,65 +168,76 @@ impl Command {
     /// 
     /// * # is a always a memory address 
     /// 
-    pub fn parse_ogn(command: &str) -> Result<Command, CommandError> {
+    pub fn parse_ogn(instruction: &str) -> Result<Instruction, InstructionError> {
         let v = Value::Value(0);
-        match command {
+        match instruction {
             c if c.ends_with(", CL") => 
-                Self::make_command(Command::Jump(v), c.replace(", Cl", "")),
+                Self::make_instruction(Instruction::Jump(v), c.replace(", Cl", "")),
             c if c.starts_with("Add ") && c.ends_with(", Cl") => 
-                Self::make_command(Command::RelativeJump(v), c.replace("Add ", "").replace(", Cl", "")),
+                Self::make_instruction(Instruction::RelativeJump(v), c.replace("Add ", "").replace(", Cl", "")),
             c if c.starts_with("-") && c.ends_with(", C") => 
-                Self::make_command(Command::Negate(v), c.replace("-", "").replace(", C", "")),
+                Self::make_instruction(Instruction::Negate(v), c.replace("-", "").replace(", C", "")),
             c if c.starts_with("c, ") => 
-                Self::make_command(Command::Store(v), c.replace("c, ", "")),
+                Self::make_instruction(Instruction::Store(v), c.replace("c, ", "")),
             c if c.starts_with("SUB ") => 
-                Self::make_command(Command::Subtract(v), c.replace("SUB ", "")),
+                Self::make_instruction(Instruction::Subtract(v), c.replace("SUB ", "")),
 
-            c if c.starts_with("Test") => Ok(Command::Test),
-            c if c.starts_with("Stop") => Ok(Command::Stop),
+            c if c.starts_with("Test") => Ok(Instruction::Test),
+            c if c.starts_with("Stop") => Ok(Instruction::Stop),
 
-            _ => Err(CommandError::UnkownCommand(command.to_string()))
+            _ => Err(InstructionError::UnkownInstruction(instruction.to_string()))
         }
     }
 
-    /// Returns a string with a short description of the command. 
+    /// Returns a string with a short description of the instruction. 
     pub fn describe(&self) -> String {
         match self {
-            Command::Jump(_) => "jump".to_owned(),
-            Command::RelativeJump(_) => "relative jump".to_owned(),
-            Command::Negate(_) => "negate".to_owned(),
-            Command::Store(_) => "store".to_owned(),
-            Command::Subtract(_) => "subtract".to_owned(),
-            Command::Test => "test".to_owned(),
-            Command::Stop => "stop".to_owned(),
+            Instruction::Jump(_) => "jump".to_owned(),
+            Instruction::RelativeJump(_) => "relative jump".to_owned(),
+            Instruction::Negate(_) => "negate".to_owned(),
+            Instruction::Store(_) => "store".to_owned(),
+            Instruction::Subtract(_) => "subtract".to_owned(),
+            Instruction::Test => "test".to_owned(),
+            Instruction::Stop => "stop".to_owned(),
         }
     }
 
-    /// Returns the stored memory address operand of a command,
+    /// Returns the stored memory address operand of a instruction,
     /// returns a 0 if a stop or test.
     pub fn get_operand(&self) -> Value {
         match self {
-            Command::Jump(v) => v.clone(),
-            Command::RelativeJump(v) => v.clone(),
-            Command::Negate(v) => v.clone(),
-            Command::Store(v) => v.clone(),
-            Command::Subtract(v) => v.clone(),
-            Command::Test => Value::Value(0),
-            Command::Stop => Value::Value(0),
+            Instruction::Jump(v) => v.clone(),
+            Instruction::RelativeJump(v) => v.clone(),
+            Instruction::Negate(v) => v.clone(),
+            Instruction::Store(v) => v.clone(),
+            Instruction::Subtract(v) => v.clone(),
+            Instruction::Test => Value::Value(0),
+            Instruction::Stop => Value::Value(0),
         }
     }
 
-    fn make_command(c: Command, op: String) -> Result<Command, CommandError> {
-        let value = match Value::parse(&op) {
+    /// Tries to parse an operand value expression, combining it 
+    /// with an instruction. 
+    /// 
+    /// Will return an [InstructionError] if parsing the operand value 
+    /// fails.
+    /// 
+    /// # Parameters
+    /// 
+    /// * `instr` - The instruction to be used. 
+    /// * `operand` - The operand value expression to be parsed and combined. 
+    /// 
+    pub fn make_instruction(instr: Instruction, operand: String) -> Result<Instruction, InstructionError> {
+        let value = match Value::parse(&operand) {
             Ok(v) => v,
-            Err(e) => return Err(CommandError::OperandValueParseError(c, e))
+            Err(e) => return Err(InstructionError::OperandValueParseError(instr, e))
         };
-        let res = match c {
-            Command::Jump(_) => Command::Jump(value),
-            Command::RelativeJump(_) => Command::RelativeJump(value),
-            Command::Negate(_) => Command::Negate(value),
-            Command::Store(_) => Command::Store(value),
-            Command::Subtract(_) => Command::Subtract(value),
+        let res = match instr {
+            Instruction::Jump(_) => Instruction::Jump(value),
+            Instruction::RelativeJump(_) => Instruction::RelativeJump(value),
+            Instruction::Negate(_) => Instruction::Negate(value),
+            Instruction::Store(_) => Instruction::Store(value),
+            Instruction::Subtract(_) => Instruction::Subtract(value),
             v => v
         };
         Ok(res)
@@ -231,9 +257,9 @@ pub enum LineType {
     Tag(String),
     /// An absolute value in the program stack. 
     Absolute(Value),
-    /// An actual command directive telling the computer to 
+    /// An actual instruction directive telling the computer to 
     /// perform an action. 
-    Command(Command),
+    Instruction(Instruction),
 }
 
 impl LineType {
@@ -242,7 +268,7 @@ impl LineType {
     /// 
     /// Returns an instance of [LineType] corresponding to the 
     /// line type and metadata. Each line can either be an absolute 
-    /// value, a command, or a tag to reference back to a location 
+    /// value, a instruction, or a tag to reference back to a location 
     /// in the program stack. 
     /// 
     /// Will return an instance of [LineParseError] if an error is 
@@ -254,18 +280,31 @@ impl LineType {
         match line {
             l if l.starts_with(":") => Self::parse_tag(l.replace(":", "")),
             l if l.starts_with("abs ") => Self::parse_absolute(l.replace("abs ", "")),
-            l => if og_notation { Self::parse_command(l) } 
-                else { Self::parse_command_ogn(l) },
+            l => if og_notation { Self::parse_instruction(l) } 
+                else { Self::parse_instruction_ogn(l) },
         }
     }
 
-    fn strip_comments(line: &str) -> String {
+    /// Strips comments from a line of Baby asm. 
+    /// 
+    /// # Example
+    /// ```
+    /// use baby_emulator::assembler::parser::LineType;
+    /// 
+    /// assert_eq!(LineType::strip_comments("sub 0xA ;foo"), "sub 0xA ".to_owned());
+    /// ```
+    /// 
+    pub fn strip_comments(line: &str) -> String {
         let lines = if let Some(v) = line.split(";").next() { v }
             else { "" };
         lines.to_owned()
     }
 
-    fn parse_tag(tag: String) -> Result<LineType, LineParseError> {
+    /// Parses a tag declaration. 
+    /// 
+    /// Returns [LineParseError::TagError] if the tag name contains
+    /// any whitepsace. 
+    pub fn parse_tag(tag: String) -> Result<LineType, LineParseError> {
         let tag = tag.trim();
         if tag.contains(char::is_whitespace) {
             return Err(LineParseError::TagError(TagError::TagNameWhitespace(tag.to_string())))
@@ -273,24 +312,56 @@ impl LineType {
         Ok(LineType::Tag(tag.to_string()))
     }
 
-    fn parse_absolute(tag: String) -> Result<LineType, LineParseError> {
+    /// Parses an absolute value expression. 
+    /// 
+    /// Will return [AbsoluteError::ValueError] if an error is thrown 
+    /// when parsing the value expression. 
+    pub fn parse_absolute(tag: String) -> Result<LineType, LineParseError> {
         match Value::parse(&tag) {
             Ok(v) => Ok(LineType::Absolute(v)),
             Err(e) => Err(LineParseError::AbsoluteError(AbsoluteError::ValueError(e)))
         }
     }
 
-    fn parse_command(command: String) -> Result<LineType, LineParseError> {
-        match Command::parse(&command) {
-            Ok(v) => Ok(LineType::Command(v)),
-            Err(e) => Err(LineParseError::CommandError(e))
+    /// Parses an asm instruction using modern notation. 
+    /// 
+    /// Will return [LineParseError::InstructionError] if the instruction isn't 
+    /// recognised or there is an error parsing the operand value. 
+    /// 
+    /// # Example
+    /// ```
+    /// use baby_emulator::assembler::parser::{LineType, Instruction};
+    /// 
+    /// match LineType::parse_instruction("stp".to_owned()) {
+    ///     Ok(LineType::Instruction(Instruction::Stop)) => println!("Sucess. "),
+    ///     _ => panic!()
+    /// }
+    /// ```
+    pub fn parse_instruction(instruction: String) -> Result<LineType, LineParseError> {
+        match Instruction::parse(&instruction) {
+            Ok(v) => Ok(LineType::Instruction(v)),
+            Err(e) => Err(LineParseError::InstructionError(e))
         }
     }
 
-    fn parse_command_ogn(command: String) -> Result<LineType, LineParseError> {
-        match Command::parse_ogn(&command) {
-            Ok(v) => Ok(LineType::Command(v)),
-            Err(e) => Err(LineParseError::CommandError(e))
+    /// Parses an asm instruction original modern notation. 
+    /// 
+    /// Will return [LineParseError::InstructionError] if the instruction isn't 
+    /// recognised or there is an error parsing the operand value. 
+    /// 
+    /// # Example
+    /// ```
+    /// use baby_emulator::assembler::parser::{LineType, Instruction};
+    /// 
+    /// match LineType::parse_instruction_ogn("Stop".to_owned()) {
+    ///     Ok(LineType::Instruction(Instruction::Stop)) => println!("Sucess. "),
+    ///     _ => panic!()
+    /// }
+    /// ```
+    pub fn parse_instruction_ogn(instruction: String) -> Result<LineType, LineParseError> {
+        match Instruction::parse_ogn(&instruction) {
+            Ok(v) => Ok(LineType::Instruction(v)),
+            Err(e) => Err(LineParseError::InstructionError(e))
         }
     }
 }

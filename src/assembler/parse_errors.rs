@@ -1,4 +1,4 @@
-use super::parser::Command;
+use super::parser::Instruction;
 
 
 /// Defines common behaviour for all errors thrown whilst parsing Baby asm. 
@@ -36,19 +36,19 @@ impl ParseError for ValueParseError {
     }
 }
 
-/// Thrown when errors are found parsing Baby asm commands. 
-pub enum CommandError {
-    /// A given command isn't correct. 
-    UnkownCommand(String),
-    /// Attempting to parse a commands operand threw an error. 
-    OperandValueParseError(Command, ValueParseError)
+/// Thrown when errors are found parsing Baby asm instructions. 
+pub enum InstructionError {
+    /// A given instruction isn't correct. 
+    UnkownInstruction(String),
+    /// Attempting to parse a instructions operand threw an error. 
+    OperandValueParseError(Instruction, ValueParseError)
 }
 
-impl ParseError for CommandError {
+impl ParseError for InstructionError {
     fn describe(&self) -> String { 
         match self {
-            CommandError::UnkownCommand(v) => format!("The specified command {} is not known. ", v),
-            CommandError::OperandValueParseError(c, v) => format!("Failed to parse operand for {}. {}", c.describe(), v.describe())
+            InstructionError::UnkownInstruction(v) => format!("The specified instruction {} is not known. ", v),
+            InstructionError::OperandValueParseError(c, v) => format!("Failed to parse operand for {}. {}", c.describe(), v.describe())
         }
     }
 }
@@ -87,8 +87,8 @@ pub enum LineParseError {
     TagError(TagError),
     /// Thrown when an error is encountered parsing an absolute value declaration. 
     AbsoluteError(AbsoluteError),
-    /// Thrown when an error is encountered parsing a command use. 
-    CommandError(CommandError),
+    /// Thrown when an error is encountered parsing a instruction use. 
+    InstructionError(InstructionError),
 }
 
 impl ParseError for LineParseError {
@@ -96,7 +96,7 @@ impl ParseError for LineParseError {
         match self {
             LineParseError::TagError(v) => format!("Error parsing a tag line, {}", v.describe()),
             LineParseError::AbsoluteError(v) => format!("Error parsing an absolute value line. {}", v.describe()),
-            LineParseError::CommandError(v) => format!("Error parsing a command line. {}", v.describe()),
+            LineParseError::InstructionError(v) => format!("Error parsing a instruction line. {}", v.describe()),
         }
     }
 }

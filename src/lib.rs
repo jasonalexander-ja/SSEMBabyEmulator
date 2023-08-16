@@ -119,7 +119,7 @@
 //! error it is, and containing an inner derivative of [errors::BabyError]
 //! that holds the metadata on that error. 
 //! 
-//! An error can simply be that a `Stop` command has been hit, and 
+//! An error can simply be that a `Stop` instruction has been hit, and 
 //! there is nothing else more to execute, so the calling code should
 //! handle that. 
 //! 
