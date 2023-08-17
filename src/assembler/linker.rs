@@ -1,3 +1,41 @@
+//! # Linker 
+//! 
+//! This module links tokenised data from the [parser][crate::assembler::parser], 
+//! identifying the concrete values of all the symbols, and returning a vector 
+//! of all the machine code instructions. 
+//! 
+//! The main part of this module is [link_parsed_lines][crate::assembler::linker::link_parsed_lines]
+//! which takes a vector of [parser::LineType][crate::assembler::parser::LineType]
+//! from the parser; identifies all the tag values, and resolves all the tag
+//! and instruction refernces to concrete values, returing a vector of 
+//! [BabyInstruction][crate::core::instructions::BabyInstruction] representing 
+//! machine code instruction. 
+//! 
+//! This output can used with the [core][crate::core] module to make a runnable 
+//! emulation model. 
+//! 
+//! This will return [LinkingError][crate::assembler::linker_errors::LinkingError] 
+//! if a tag reference cannot be bound. 
+//! 
+//! # Example
+//! ```
+//! use baby_emulator::assembler::parser;
+//! use baby_emulator::assembler::linker;
+//! 
+//! 
+//! pub fn assemble(asm: &String) -> Result<Vec<BabyInstruction>, AssemblyError> {
+//!     let parse_result = match parser::parse_asm_string(asm, false) {
+//!         Ok(v) => v,
+//!         Err((l, e)) => return Err(AssemblyError::ParserError(l, e))
+//!     };
+//!     match linker::link_parsed_lines(parse_result) {
+//!         Ok(v) => Ok(v),
+//!         Err(e) => Err(AssemblyError::LinkerError(e))
+//!     }
+//! }
+//! ```
+//! 
+
 use std::collections::HashMap;
 use std::convert::identity;
 use crate::core::instructions::BabyInstruction;
@@ -11,11 +49,10 @@ use super::linker_errors::{LinkingError, TagError};
 /// to the tags to the determines value. 
 /// 
 /// If the all the contained value expressions can be resolved without error it will
-/// return an [Ok] with a vector of tuples of the each instruction [BabyInstruction] 
-/// and the corresponding memory address operand [u16]. 
+/// return an [Ok] with a vector of each instruction [BabyInstruction]. 
 /// 
 /// Returns a [LinkingError] if an error is encountered resolving the values. 
-pub fn link_parsed_lines(lines: Vec<LineType>) -> Result<Vec<(BabyInstruction, u16)>, LinkingError> {
+pub fn link_parsed_lines(lines: Vec<LineType>) -> Result<Vec<BabyInstruction>, LinkingError> {
     let inlined_tags = inline_tags(lines);
     let tag_values = position_tags(&inlined_tags);
     let preprocessed_lines: Vec<UnlinkedData> = inlined_tags.iter()
@@ -28,11 +65,10 @@ pub fn link_parsed_lines(lines: Vec<LineType>) -> Result<Vec<(BabyInstruction, u
 /// resolves all the tag name references. 
 /// 
 /// Converts the unlinked data to a tuple of  [BabyInstruction] representing concrete 
-/// machine code/program data and a [u16] representing any memory address operands. 
+/// machine code/program data. 
 /// 
 /// If the all the contained value expressions can be resolved without error it will
-/// return an [Ok] with a vector of tuples of the each instruction [BabyInstruction] 
-/// and the corresponding memory address operand [u16]. 
+/// return an [Ok] with a vector of each instruction [BabyInstruction]. 
 /// 
 /// Returns a [LinkingError] if an error is encountered resolving the values. 
 /// 
@@ -41,8 +77,8 @@ pub fn link_parsed_lines(lines: Vec<LineType>) -> Result<Vec<(BabyInstruction, u
 /// * `tag_values` - The tag names and corresponding values. 
 /// 
 fn link_tags(preprocessed_lines: Vec<UnlinkedData>, tag_values: HashMap<String, i32>) -> 
-    Result<Vec<(BabyInstruction, u16)>, LinkingError> {
-    let mut instructions: Vec<(BabyInstruction, u16)> = vec![];
+    Result<Vec<BabyInstruction>, LinkingError> {
+    let mut instructions: Vec<BabyInstruction> = vec![];
 
     for line in preprocessed_lines {
         let val = match line.resolve(&tag_values) {
@@ -121,7 +157,7 @@ impl UnlinkedData {
     /// 
     /// * `tags` - A hashmap pf tag names and corresponding values. 
     /// 
-    pub fn resolve(&self, tags: &HashMap<String, i32>) -> Result<(BabyInstruction, u16), TagError> {
+    pub fn resolve(&self, tags: &HashMap<String, i32>) -> Result<BabyInstruction, TagError> {
         match self {
             UnlinkedData::Absolute(v) => Self::resolve_absolute_value(v, tags),
             UnlinkedData::Instruction(c) => Self::resolve_instruction(c, tags)
@@ -131,8 +167,7 @@ impl UnlinkedData {
     /// Converts an [Instruction] object to [BabyInstruction], resolving the inner 
     /// operand value expression to a concrete value. 
     /// 
-    /// If the inner value expression can be determined, it will return a tuple of the
-    /// corresponding [BabyInstruction] and the operand memory address value. 
+    /// If the inner value expression can be determined, it will return [BabyInstruction]. 
     /// 
     /// Will return [TagError] if the value expresion is a tag reference that 
     /// cannot be determined. 
@@ -142,19 +177,19 @@ impl UnlinkedData {
     /// * `instr` - The instruction to be resolved. 
     /// * `tags` - A collection of tag names and values to be looked up. 
     /// 
-    pub fn resolve_instruction(instr: &Instruction, tags: &HashMap<String, i32>) -> Result<(BabyInstruction, u16), TagError> {
+    pub fn resolve_instruction(instr: &Instruction, tags: &HashMap<String, i32>) -> Result<BabyInstruction, TagError> {
         let val = match Self::resolve_value(&instr.get_operand(), tags) {
             Ok(v) => v,
             Err(v) => return Err(TagError::UnknownTagName(v))
         } as u16;
         match instr {
-            Instruction::Jump(_) => Ok((BabyInstruction::Jump, val)),
-            Instruction::RelativeJump(_) => Ok((BabyInstruction::RelativeJump, val)),
-            Instruction::Negate(_) => Ok((BabyInstruction::Negate, val)),
-            Instruction::Store(_) => Ok((BabyInstruction::Store, val)),
-            Instruction::Subtract(_) => Ok((BabyInstruction::Subtract, val)),
-            Instruction::Test => Ok((BabyInstruction::SkipNextIfNegative, 0)),
-            Instruction::Stop => Ok((BabyInstruction::Stop, 0)),
+            Instruction::Jump(_) => Ok(BabyInstruction::Jump(val)),
+            Instruction::RelativeJump(_) => Ok(BabyInstruction::RelativeJump(val)),
+            Instruction::Negate(_) => Ok(BabyInstruction::Negate(val)),
+            Instruction::Store(_) => Ok(BabyInstruction::Store(val)),
+            Instruction::Subtract(_) => Ok(BabyInstruction::Subtract(val)),
+            Instruction::Test => Ok(BabyInstruction::SkipNextIfNegative),
+            Instruction::Stop => Ok(BabyInstruction::Stop),
         }
     }
 
@@ -168,9 +203,9 @@ impl UnlinkedData {
     /// * `val` - The value to be resolved. 
     /// * `tags` - A collection of tag names and values to be looked up. 
     /// 
-    pub fn resolve_absolute_value(val: &Value, tags: &HashMap<String, i32>) -> Result<(BabyInstruction, u16), TagError> {
+    pub fn resolve_absolute_value(val: &Value, tags: &HashMap<String, i32>) -> Result<BabyInstruction, TagError> {
         match Self::resolve_value(val, tags) {
-            Ok(v) => Ok((BabyInstruction::AbsoluteValue(v), 0)),
+            Ok(v) => Ok(BabyInstruction::AbsoluteValue(v)),
             Err(v) => Err(TagError::UnknownTagName(v))
         }
     }

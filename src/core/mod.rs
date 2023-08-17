@@ -63,7 +63,7 @@
 //! You can also use [BabyModel::execute][crate::core::BabyModel::execute]
 //! this will execute the next commands loaded from the memory, returning 
 //! [InstrResult][crate::core::InstrResult] that will either be the 
-//! new model, or a [BabyErrors][crate::errors::BabyErrors] detailing the 
+//! new model, or a [BabyErrors][crate::core::errors::BabyErrors] detailing the 
 //! error encountered (this can be simply encountering a stop command). 
 //! 
 //! ```
@@ -95,13 +95,15 @@
 //! 
 
 use std::ops::Neg;
-use crate::errors::Stop;
-use crate::errors::BabyErrors;
+use errors::Stop;
+use errors::BabyErrors;
 use instructions::BabyInstruction;
 
+
+/// Contains potential errors thrown during emulation. 
+pub mod errors;
 /// Contains models and functionality for decoding instructions. 
 pub mod instructions;
-
 
 /// The number of words in the memory used globally.  
 pub const MEMORY_WORDS: usize = 32;
@@ -191,12 +193,12 @@ impl BabyModel {
     /// 
     pub fn new_example_program() -> BabyModel {
         let instrs = vec![
-            (BabyInstruction::Negate, 5),
-            (BabyInstruction::Subtract, 5),
-            (BabyInstruction::Store, 6),
-            (BabyInstruction::Negate, 6),
-            (BabyInstruction::Stop, 0),
-            (BabyInstruction::AbsoluteValue(5), 0)
+            BabyInstruction::Negate(5),
+            BabyInstruction::Subtract(5),
+            BabyInstruction::Store(6),
+            BabyInstruction::Negate(6),
+            BabyInstruction::Stop,
+            BabyInstruction::AbsoluteValue(5),
         ];
         let main_store = BabyInstruction::to_numbers(instrs);
 
@@ -238,8 +240,8 @@ impl BabyModel {
     /// ```
     /// 
     pub fn execute(&self) -> InstrResult {
-        let (instruction, op) = BabyInstruction::from_number(self.instruction);
-        let operand = op as usize & 0x1F;
+        let instruction = BabyInstruction::from_number(self.instruction);
+        let operand = instruction.get_operand();
         let operand_value = self.main_store[operand];
 
         self.dispatch_instruction(instruction, operand_value)
@@ -247,11 +249,11 @@ impl BabyModel {
 
     fn dispatch_instruction(&self, instruction: BabyInstruction, operand_value: i32) -> InstrResult {
         let res = match instruction {
-            BabyInstruction::Jump => self.jump(operand_value),
-            BabyInstruction::RelativeJump => self.relative_jump(operand_value),
-            BabyInstruction::Negate => self.negate(operand_value),
-            BabyInstruction::Store => self.store(operand_value),
-            BabyInstruction::Subtract => self.subtract(operand_value),
+            BabyInstruction::Jump(_) => self.jump(operand_value),
+            BabyInstruction::RelativeJump(_) => self.relative_jump(operand_value),
+            BabyInstruction::Negate(_) => self.negate(operand_value),
+            BabyInstruction::Store(_) => self.store(operand_value),
+            BabyInstruction::Subtract(_) => self.subtract(operand_value),
             BabyInstruction::SkipNextIfNegative => self.test(),
             BabyInstruction::Stop => return Err(BabyErrors::Stop(Stop {
                 at: self.instruction_address,

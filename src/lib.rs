@@ -115,8 +115,8 @@
 //! set to the memory address of that instruction. 
 //! 
 //! If an issue is found then [core::BabyModel::execute] will return an `Err`
-//! containing an instance of [errors::BabyErrors] enum with which 
-//! error it is, and containing an inner derivative of [errors::BabyError]
+//! containing an instance of [core::errors::BabyErrors] enum with which 
+//! error it is, and containing an inner derivative of [core::errors::BabyError]
 //! that holds the metadata on that error. 
 //! 
 //! An error can simply be that a `Stop` instruction has been hit, and 
@@ -145,8 +145,6 @@
 //! ```
 
 
-/// Contains potential errors thrown during emulation. 
-pub mod errors;
 /// Contains the core models and emulation functionality. 
 pub mod core;
 /// Contains types and functionality for assembling Baby asm. 

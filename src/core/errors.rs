@@ -1,3 +1,17 @@
+//! # Errors
+//! 
+//! This module includes all the possible errors that can be thrown 
+//! during emulation execution, all error types implement [LinkerError][crate::core::errors::BabyError].
+//! 
+//! The main type in this module is [BabyErrors][crate::core::errors::BabyErrors]
+//! whcih is an enum that has a branch for each possible error that can be thrown 
+//! with each branch wrapping the corresponding error type that contains metadata 
+//! on that error. 
+//! 
+//! Any new error types and object should be added to this enum. 
+//! 
+
+
 use crate::core::instructions::BabyInstruction;
 
 /// Defines standard behaviour for any thrown errors. 

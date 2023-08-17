@@ -1,3 +1,17 @@
+//! # Parse Errors 
+//! 
+//! This module includes all the possible errors that can be thrown 
+//! during parsing, all error types implement [ParseError][crate::assembler::parse_errors::ParseError].
+//! 
+//! The main type in this module is [LineParseError][crate::assembler::parse_errors::LineParseError]
+//! whcih is an enum that has a branch for each possible error that can be thrown 
+//! with each branch wrapping the corresponding error type that contains metadata 
+//! on that error. 
+//! 
+//! Any new error types and object should be added to this enum. 
+//! 
+
+
 use super::parser::Instruction;
 
 

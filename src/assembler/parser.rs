@@ -1,3 +1,38 @@
+//! # Parser 
+//! 
+//! This module parses Baby asm strings, verifying the syntax, and tokenising 
+//! the strings into types.
+//! 
+//! The main functionality of this module is in [parse_asm_string][crate::assembler::parser::parse_asm_string],
+//! this takes in a full asm string that can be read from a file, and tries to 
+//! parse it into [LineType][crate::assembler::parser::LineType] that represents 
+//! all the possible types of lines in Baby asm. 
+//! 
+//! This can assemble both modern and original notation depending on the 
+//! value passed to `og_notation`. 
+//! 
+//! The output of this can be fed straight into [linker::link_parsed_lines][crate::assembler::linker::link_parsed_lines]
+//! to produce a final fully assembled machine code from the asm string. 
+//! 
+//! # Example
+//! ```
+//! use baby_emulator::assembler::parser;
+//! use baby_emulator::assembler::linker;
+//! 
+//! 
+//! pub fn assemble(asm: &String) -> Result<Vec<BabyInstruction>, AssemblyError> {
+//!     let parse_result = match parser::parse_asm_string(asm, false) {
+//!         Ok(v) => v,
+//!         Err((l, e)) => return Err(AssemblyError::ParserError(l, e))
+//!     };
+//!     match linker::link_parsed_lines(parse_result) {
+//!         Ok(v) => Ok(v),
+//!         Err(e) => Err(AssemblyError::LinkerError(e))
+//!     }
+//! }
+//! ```
+//! 
+
 use super::parse_errors::{
     LineParseError,
     TagError,
@@ -262,150 +297,147 @@ pub enum LineType {
     Instruction(Instruction),
 }
 
-impl LineType {
+/// Splits an asm string into lines, removes the blank lines and
+/// tries to parse each one. 
+/// 
+/// Basically a wrapper for [parse_lines]. 
+/// 
+/// Returns a list of [LineType] corresponding to the line type 
+/// and metadata. Each line can either be an absolute value, a 
+/// instruction, or a tag to reference back to a location in the 
+/// program stack. 
+/// 
+/// Will return a tuple of [usize] and [LineParseError] if an error is 
+/// encountered, containing the metatdata on the error encountered and the
+/// index of the line it was found on. 
+/// 
+pub fn parse_asm_string(asm: &String, og_notation: bool) -> Result<Vec<LineType>, (usize, LineParseError)> {
+    let lines: Vec<String> = asm.lines()
+        .map(strip_comments)
+        .filter(|l| !l.is_empty())
+        .collect();
+    parse_lines(lines, og_notation)
+}
 
-    /// Tries to parse a line of Baby asm 
-    /// 
-    /// Returns an instance of [LineType] corresponding to the 
-    /// line type and metadata. Each line can either be an absolute 
-    /// value, a instruction, or a tag to reference back to a location 
-    /// in the program stack. 
-    /// 
-    /// Will return an instance of [LineParseError] if an error is 
-    /// encountered, containing metatdata on the error encountered.  
-    /// 
-    pub fn parse_line(line: &String, og_notation: bool) -> Result<LineType, LineParseError> {
-        let line = line.trim().to_lowercase();
-        let line = Self::strip_comments(&line);
-        match line {
-            l if l.starts_with(":") => Self::parse_tag(l.replace(":", "")),
-            l if l.starts_with("abs ") => Self::parse_absolute(l.replace("abs ", "")),
-            l => if og_notation { Self::parse_instruction(l) } 
-                else { Self::parse_instruction_ogn(l) },
+/// Tries to parse a vector of lines of Baby asm 
+/// 
+/// Returns a list of [LineType] corresponding to the 
+/// line type and metadata. Each line can either be an absolute 
+/// value, a instruction, or a tag to reference back to a location 
+/// in the program stack. 
+/// 
+/// Will return a tuple of [usize] and [LineParseError] if an error is 
+/// encountered, containing the metatdata on the error encountered and the
+/// index of the line it was found on. 
+/// 
+pub fn parse_lines(lines: Vec<String>, og_notation: bool) -> Result<Vec<LineType>, (usize, LineParseError)> {
+    let mut res: Vec<LineType> = vec![];
+    for (index, line) in lines.iter().enumerate() {
+        match parse_line(line, og_notation) {
+            Ok(l) => res.push(l),
+            Err(e) => return Err((index, e))
         }
     }
+    Ok(res)
+}
 
-    /// Tries to parse a vector of lines of Baby asm 
-    /// 
-    /// Returns a list of [LineType] corresponding to the 
-    /// line type and metadata. Each line can either be an absolute 
-    /// value, a instruction, or a tag to reference back to a location 
-    /// in the program stack. 
-    /// 
-    /// Will return a tuple of [usize] and [LineParseError] if an error is 
-    /// encountered, containing the metatdata on the error encountered and the
-    /// index of the line it was found on. 
-    /// 
-    pub fn parse_lines(lines: Vec<String>, og_notation: bool) -> Result<Vec<LineType>, (usize, LineParseError)> {
-        let mut res: Vec<LineType> = vec![];
-        for (index, line) in lines.iter().enumerate() {
-            match Self::parse_line(line, og_notation) {
-                Ok(l) => res.push(l),
-                Err(e) => return Err((index, e))
-            }
-        }
-        Ok(res)
+/// Tries to parse a line of Baby asm 
+/// 
+/// Returns an instance of [LineType] corresponding to the 
+/// line type and metadata. Each line can either be an absolute 
+/// value, a instruction, or a tag to reference back to a location 
+/// in the program stack. 
+/// 
+/// Will return an instance of [LineParseError] if an error is 
+/// encountered, containing metatdata on the error encountered.  
+/// 
+pub fn parse_line(line: &String, og_notation: bool) -> Result<LineType, LineParseError> {
+    let line = line.trim().to_lowercase();
+    let line = strip_comments(&line);
+    match line {
+        l if l.starts_with(":") => parse_tag(l.replace(":", "")),
+        l if l.starts_with("abs ") => parse_absolute(l.replace("abs ", "")),
+        l => if og_notation { parse_instruction(l) } 
+            else { parse_instruction_ogn(l) },
     }
+}
 
-    /// Splits an asm string into lines, removes the blank lines and
-    /// tries to parse each one. 
-    /// 
-    /// Basically a wrapper for [LineType::parse_lines]. 
-    /// 
-    /// Returns a list of [LineType] corresponding to the line type 
-    /// and metadata. Each line can either be an absolute value, a 
-    /// instruction, or a tag to reference back to a location in the 
-    /// program stack. 
-    /// 
-    /// Will return a tuple of [usize] and [LineParseError] if an error is 
-    /// encountered, containing the metatdata on the error encountered and the
-    /// index of the line it was found on. 
-    /// 
-    pub fn parse_asm_string(asm: &String, og_notation: bool) -> Result<Vec<LineType>, (usize, LineParseError)> {
-        let lines: Vec<String> = asm.lines()
-            .map(Self::strip_comments)
-            .filter(|l| !l.is_empty())
-            .collect();
-        Self::parse_lines(lines, og_notation)
+/// Strips comments from a line of Baby asm. 
+/// 
+/// # Example
+/// ```
+/// use baby_emulator::assembler::parser::LineType;
+/// 
+/// assert_eq!(LineType::strip_comments("sub 0xA ;foo"), "sub 0xA ".to_owned());
+/// ```
+/// 
+pub fn strip_comments(line: &str) -> String {
+    let lines = if let Some(v) = line.split(";").next() { v }
+        else { "" };
+    lines.to_owned()
+}
+
+/// Parses a tag declaration. 
+/// 
+/// Returns [LineParseError::TagError] if the tag name contains
+/// any whitepsace. 
+pub fn parse_tag(tag: String) -> Result<LineType, LineParseError> {
+    let tag = tag.trim();
+    if tag.contains(char::is_whitespace) {
+        return Err(LineParseError::TagError(TagError::TagNameWhitespace(tag.to_string())))
     }
+    Ok(LineType::Tag(tag.to_string()))
+}
 
-    /// Strips comments from a line of Baby asm. 
-    /// 
-    /// # Example
-    /// ```
-    /// use baby_emulator::assembler::parser::LineType;
-    /// 
-    /// assert_eq!(LineType::strip_comments("sub 0xA ;foo"), "sub 0xA ".to_owned());
-    /// ```
-    /// 
-    pub fn strip_comments(line: &str) -> String {
-        let lines = if let Some(v) = line.split(";").next() { v }
-            else { "" };
-        lines.to_owned()
+/// Parses an absolute value expression. 
+/// 
+/// Will return [AbsoluteError::ValueError] if an error is thrown 
+/// when parsing the value expression. 
+pub fn parse_absolute(tag: String) -> Result<LineType, LineParseError> {
+    match Value::parse(&tag) {
+        Ok(v) => Ok(LineType::Absolute(v)),
+        Err(e) => Err(LineParseError::AbsoluteError(AbsoluteError::ValueError(e)))
     }
+}
 
-    /// Parses a tag declaration. 
-    /// 
-    /// Returns [LineParseError::TagError] if the tag name contains
-    /// any whitepsace. 
-    pub fn parse_tag(tag: String) -> Result<LineType, LineParseError> {
-        let tag = tag.trim();
-        if tag.contains(char::is_whitespace) {
-            return Err(LineParseError::TagError(TagError::TagNameWhitespace(tag.to_string())))
-        }
-        Ok(LineType::Tag(tag.to_string()))
+/// Parses an asm instruction using modern notation. 
+/// 
+/// Will return [LineParseError::InstructionError] if the instruction isn't 
+/// recognised or there is an error parsing the operand value. 
+/// 
+/// # Example
+/// ```
+/// use baby_emulator::assembler::parser::{LineType, Instruction};
+/// 
+/// match LineType::parse_instruction("stp".to_owned()) {
+///     Ok(LineType::Instruction(Instruction::Stop)) => println!("Sucess. "),
+///     _ => panic!()
+/// }
+/// ```
+pub fn parse_instruction(instruction: String) -> Result<LineType, LineParseError> {
+    match Instruction::parse(&instruction) {
+        Ok(v) => Ok(LineType::Instruction(v)),
+        Err(e) => Err(LineParseError::InstructionError(e))
     }
+}
 
-    /// Parses an absolute value expression. 
-    /// 
-    /// Will return [AbsoluteError::ValueError] if an error is thrown 
-    /// when parsing the value expression. 
-    pub fn parse_absolute(tag: String) -> Result<LineType, LineParseError> {
-        match Value::parse(&tag) {
-            Ok(v) => Ok(LineType::Absolute(v)),
-            Err(e) => Err(LineParseError::AbsoluteError(AbsoluteError::ValueError(e)))
-        }
-    }
-
-    /// Parses an asm instruction using modern notation. 
-    /// 
-    /// Will return [LineParseError::InstructionError] if the instruction isn't 
-    /// recognised or there is an error parsing the operand value. 
-    /// 
-    /// # Example
-    /// ```
-    /// use baby_emulator::assembler::parser::{LineType, Instruction};
-    /// 
-    /// match LineType::parse_instruction("stp".to_owned()) {
-    ///     Ok(LineType::Instruction(Instruction::Stop)) => println!("Sucess. "),
-    ///     _ => panic!()
-    /// }
-    /// ```
-    pub fn parse_instruction(instruction: String) -> Result<LineType, LineParseError> {
-        match Instruction::parse(&instruction) {
-            Ok(v) => Ok(LineType::Instruction(v)),
-            Err(e) => Err(LineParseError::InstructionError(e))
-        }
-    }
-
-    /// Parses an asm instruction original modern notation. 
-    /// 
-    /// Will return [LineParseError::InstructionError] if the instruction isn't 
-    /// recognised or there is an error parsing the operand value. 
-    /// 
-    /// # Example
-    /// ```
-    /// use baby_emulator::assembler::parser::{LineType, Instruction};
-    /// 
-    /// match LineType::parse_instruction_ogn("Stop".to_owned()) {
-    ///     Ok(LineType::Instruction(Instruction::Stop)) => println!("Sucess. "),
-    ///     _ => panic!()
-    /// }
-    /// ```
-    pub fn parse_instruction_ogn(instruction: String) -> Result<LineType, LineParseError> {
-        match Instruction::parse_ogn(&instruction) {
-            Ok(v) => Ok(LineType::Instruction(v)),
-            Err(e) => Err(LineParseError::InstructionError(e))
-        }
+/// Parses an asm instruction original modern notation. 
+/// 
+/// Will return [LineParseError::InstructionError] if the instruction isn't 
+/// recognised or there is an error parsing the operand value. 
+/// 
+/// # Example
+/// ```
+/// use baby_emulator::assembler::parser::{LineType, Instruction};
+/// 
+/// match LineType::parse_instruction_ogn("Stop".to_owned()) {
+///     Ok(LineType::Instruction(Instruction::Stop)) => println!("Sucess. "),
+///     _ => panic!()
+/// }
+/// ```
+pub fn parse_instruction_ogn(instruction: String) -> Result<LineType, LineParseError> {
+    match Instruction::parse_ogn(&instruction) {
+        Ok(v) => Ok(LineType::Instruction(v)),
+        Err(e) => Err(LineParseError::InstructionError(e))
     }
 }

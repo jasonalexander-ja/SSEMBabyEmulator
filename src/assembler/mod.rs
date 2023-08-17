@@ -4,19 +4,65 @@
 //! Baby asm. 
 //! 
 //! The main part of this module is the [assemble][assembler::assemble] function, that takes
-//! a string of asm and attempts to assemble to a vector of tuples of [BabyInstruction][crate::core::instructions::BabyInstruction] 
-//! representing individual Baby machine code instructions, and [u16] representing the 
-//! operand for each instruction. 
+//! a string of asm and attempts to assemble to a vector of [BabyInstruction][crate::core::instructions::BabyInstruction] 
+//! representing individual Baby machine code instructions. 
 //! 
 //! This can be fed straight into [BabyInstruction::to_numbers][crate::core::instructions::BabyInstruction::to_numbers] 
 //! that can then be used to with [BabyModel::new_with_program][crate::core::BabyModel::new_with_program] 
 //! to make a  runnable instance of the Baby emulator loaded with the assembled program. 
 //! 
-//! ## Syntax
+//! # Example
+//! 
+//! This is a simple example that assembles an assembly string,
+//! converts the result to a memory array using [BabyInstruction::to_numbers][crate::core::instructions::BabyInstruction::to_numbers], 
+//! instantiates a baby model  and then runs it as per the example 
+//! in [core][crate::core] module.  
+//! 
+//! ```
+//! use baby_emulator::assembler::assemble; 
+//! use baby_emulator::core::instructions::BabyInstruction;
+//! use baby_emulator::core::BabyModel;
+//! 
+//! const ASM: &str = 
+//! "
+//! ldn $start_value  ; Loads 10 into the accumulator 
+//!  
+//! :loop_start
+//! sub $subtract_val ; Subtract 1 from the accumulator 
+//! cmp               ; Skip the next jump instruction if the accumulator is negative 
+//! jmp $loop_start   ; Jump to the start of the loop 
+//! stp               ; Program stops when the accumulator is negative 
+//!  
+//! :subtract_val     ; Value to be subtracted
+//! abs 0d1
+//!  
+//! :start_value ; Value to start in the accumulator 
+//! abs 0d-10
+//! ";
+//!
+//! fn main() {
+//!     let instructions = match assemble(asm, false) {
+//!         Ok(v) => v,
+//!         Err(e) => { println!("{}", e.describe()); return; }
+//!     };
+//!     let main_store = BabyInstruction::to_numbers(instructions);
+//! 
+//!     let mut model = BabyModel::new_with_program(main_store);
+//!     loop {
+//!         model = match model.execute() {
+//!             Ok(m) => m,
+//!             Err(_) => break
+//!         };
+//!     }
+//!     println!("{}", model.core_dump());
+//! }
+//! ```
+//! 
+//! # Syntax
 //! The original Manchester Baby did not have an assembly language, this is just 
 //! a simple language put together to make programming a little bit easier. 
 //! 
-//! ### Instructions
+//! ## Instructions
 //! Baby assembly contains the following instructions:
 //! 
 //! | Modern Notation | Original Notation | Description                                                                                                                                           |
@@ -35,7 +81,7 @@
 //! * All instructions with a value operand `#` the value operand is always 
 //! a memory address. 
 //! 
-//! ### Values 
+//! ## Values 
 //! The following value formats are accepted: 
 //! 
 //! | Format        | Example |
@@ -46,19 +92,19 @@
 //! | Binary        | 0b1010  |
 //! | Tag Reference | $start  |
 //! 
-//! ### Tags
+//! ## Tags
 //! You can tag a position in the program stack and reference it's memory address 
 //! as a value using a named tag, for instance the following code jumps to a 
 //! stop command by referencing `prog_end` as the value parameter to a jump instruction. 
 //! 
-//! ```asm
+//! ```text
 //! jmp $prog_end
 //! 
 //! :prog_end
 //! stp
 //! ```
 //! 
-//! ### Absolute values
+//! ## Absolute values
 //! Often you will need to include values in your program code in, you will have to 
 //! add these to your program stack in memory, to do this you can use the `abs #` directive, 
 //! this looks looks like an instruction but in reality just tells the assembler to 
@@ -70,17 +116,17 @@
 //! 
 //! The below program loads a "10" into the accumulator from memory by negatively loading a
 //! "-10" from a location denoted by the tag `foo`: 
-//! ```asm
+//! ```text
 //! ldn $foo
 //! 
 //! :foo
 //! abs 0d-10
 //! ```
 //! 
-//! ### Comments 
+//! ## Comments 
 //! Comments can be used with a `;` as with other assembly languages. 
 //! 
-//! ```asm
+//! ```text
 //! ; This is a comment
 //! JMP 0d1 ; And so is this 
 //! ```
@@ -93,7 +139,7 @@
 //! is negative, a stop instruction is hit and the machine stops. 
 //! 
 //! Modern notation: 
-//! ```asm
+//! ```text
 //! ldn $start_value  ; Loads 10 into the accumulator 
 //! 
 //! :loop_start
@@ -110,7 +156,7 @@
 //! ```
 //! 
 //! Original notation: 
-//! ```asm
+//! ```text
 //! -$start_value, C  ; Loads 10 into the accumulator 
 //! 
 //! :loop_start
@@ -126,9 +172,6 @@
 //! abs 0d-10
 //! ```
 //! 
-#[allow(unused_imports)]
-use crate::core::BabyModel;
-
 use crate::core::instructions::BabyInstruction;
 use errors::AssemblyError;
 
@@ -145,13 +188,11 @@ pub mod linker_errors;
 /// assembling process. 
 pub mod errors;
 
-/// Assembles a string of Baby asm to a vector of tuples with a [BabyInstruction] and the 
-/// operand for the instruction. 
+/// Assembles a string of Baby asm to a vector of [BabyInstruction] machine code instructions. 
 /// 
 /// Can assemble for both modern and original notation depending on `og_notation`. 
 /// 
-/// If sucessful it will return a vector of tuples of [BabyInstruction] and [u16]
-/// which are respectively each instruction and memory address operand respectively. 
+/// If sucessful it will return a vector of [BabyInstruction]. 
 /// 
 /// This type can be fed straight into [BabyInstruction::to_numbers] to return an
 /// array of [i32] that can be used to directly instantiate [BabyModel][crate::core::BabyModel]
@@ -164,8 +205,8 @@ pub mod errors;
 /// * `asm` - The assembly string. 
 /// * `og_notation` - If true, will use original notation. 
 /// 
-pub fn assemble(asm: &String, og_notation: bool) -> Result<Vec<(BabyInstruction, u16)>, AssemblyError> {
-    let parse_result = match parser::LineType::parse_asm_string(asm, og_notation) {
+pub fn assemble(asm: &String, og_notation: bool) -> Result<Vec<BabyInstruction>, AssemblyError> {
+    let parse_result = match parser::parse_asm_string(asm, og_notation) {
         Ok(v) => v,
         Err((l, e)) => return Err(AssemblyError::ParserError(l, e))
     };

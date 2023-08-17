@@ -1,3 +1,34 @@
+//! # Assembler Errors
+//! 
+//! This is a simple helper module containing the type [AssemblyError][crate::assembler::errors::AssemblyError],
+//! that can contain all the errors thrown during the assembling 
+//! process. 
+//! 
+//! Since this assembler is quite simple and simply takes the 
+//! output of the parser and feeds it into the linker, returning
+//! the resultant machine code, this enum just has 2 values, 
+//! [AssemblyError::ParserError][crate::assembler::errors::AssemblyError::LinkerError] & [AssemblyError::LinkerError][crate::assembler::errors::AssemblyError::LinkerError].
+//! 
+//! These are wrappers for the overarching error types exported by 
+//! [assembler::parse_errors][crate::assembler::parse_errors] & [assembler::linker_errors][crate::assembler::linker_errors].
+//! These represent the errors thrown by the parsing and linking. 
+//! 
+//! For simple debug purposes, [crate::assembler::errors::AssemblyError::describe]
+//! can be used to simply log any error to the console. 
+//! 
+//! # Example 
+//! ```
+//! use baby_emulator::assembler::assemble;
+//! 
+//! fn assemble_and_run(asm: String) {
+//!     let instructions = match assemble(&asm, false) {
+//!         Ok(v) => (),
+//!         Err(e) => { println!("{}", e.describe()); return; }
+//!     };
+//! }
+//! ```
+//! 
+
 use super::linker_errors::{LinkingError, LinkerError};
 use super::parse_errors::{LineParseError, ParseError}; 
 

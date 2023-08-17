@@ -19,20 +19,20 @@ use crate::core::MEMORY_WORDS;
 pub enum BabyInstruction {
     /// Jump to the instruction at the address obtained from the 
     /// specified memory address (absolute unconditional jump). 
-    Jump,
+    Jump(u16),
     /// Jump to the instruction at the program counter plus (+) 
     /// the relative value obtained from the specified memory 
     /// address (relative unconditional jump). 
-    RelativeJump,
+    RelativeJump(u16),
     /// Take the number from the specified memory address S, 
     /// negate it, and load it into the accumulator. 
-    Negate,
+    Negate(u16),
     /// Store the number in the accumulator to the specified 
     /// memory address S. 
-    Store,
+    Store(u16),
     /// Subtract the number at the specified memory address S from the 
     /// value in accumulator, and store the result in the accumulator. 
-    Subtract,
+    Subtract(u16),
     /// Skip next instruction if the accumulator contains a 
     /// negative value. 
     SkipNextIfNegative,
@@ -46,11 +46,11 @@ impl BabyInstruction {
     /// Gets a short description of the instruction. 
     pub fn get_instr_description(&self) -> String {
         match self {
-            BabyInstruction::Jump => "jump instruction".to_owned(),
-            BabyInstruction::RelativeJump => "relative jump instruction".to_owned(),
-            BabyInstruction::Negate => "negate instruction".to_owned(),
-            BabyInstruction::Store => "store instruction".to_owned(),
-            BabyInstruction::Subtract => "subtract instruction".to_owned(),
+            BabyInstruction::Jump(_) => "jump instruction".to_owned(),
+            BabyInstruction::RelativeJump(_) => "relative jump instruction".to_owned(),
+            BabyInstruction::Negate(_) => "negate instruction".to_owned(),
+            BabyInstruction::Store(_) => "store instruction".to_owned(),
+            BabyInstruction::Subtract(_) => "subtract instruction".to_owned(),
             BabyInstruction::SkipNextIfNegative => "skip next if negative instruction".to_owned(),
             BabyInstruction::Stop => "jump instruction".to_owned(),
             BabyInstruction::AbsoluteValue(v) => format!("absolute value {}", v) 
@@ -81,19 +81,19 @@ impl BabyInstruction {
     /// 
     /// * `value` - The instruction to be decoded. 
     /// 
-    pub fn from_number(value: u16) -> (BabyInstruction, u16) {
+    pub fn from_number(value: u16) -> BabyInstruction {
         let opcode = value >> 13;
         let operand = value & 0x1F;
         let res = match opcode {
-            0b000 => BabyInstruction::Jump,
-            0b100 => BabyInstruction::RelativeJump,
-            0b010 => BabyInstruction::Negate,
-            0b110 => BabyInstruction::Store,
-            0b001 | 0b101 => BabyInstruction::Subtract,
+            0b000 => BabyInstruction::Jump(operand),
+            0b100 => BabyInstruction::RelativeJump(operand),
+            0b010 => BabyInstruction::Negate(operand),
+            0b110 => BabyInstruction::Store(operand),
+            0b001 | 0b101 => BabyInstruction::Subtract(operand),
             0b011 => BabyInstruction::SkipNextIfNegative,
             _ => BabyInstruction::Stop,
         };
-        (res, operand)
+        res
     }
 
     /// Encodes an instruction and operand into a program instrcution. 
@@ -101,18 +101,13 @@ impl BabyInstruction {
     /// Converts the instruction into the relevant value, and incorporates 
     /// the memory address operand, returning the full program instruction 
     /// that can be executed. 
-    /// 
-    /// # Parameters 
-    /// 
-    /// * `operand` - The operand memory address to be included in the program instruction. 
-    /// 
-    pub fn to_number(&self, operand: u16) -> i32 {
+    pub fn to_number(&self) -> i32 {
         match self {
-            BabyInstruction::Jump => (0b000 << 13) | (operand & 0x1F) as i32,
-            BabyInstruction::RelativeJump => (0b100 << 13) | (operand & 0x1F) as i32,
-            BabyInstruction::Negate => (0b010 << 13) | (operand & 0x1F) as i32,
-            BabyInstruction::Store => (0b110 << 13) | (operand & 0x1F) as i32,
-            BabyInstruction::Subtract => (0b001 << 13) | (operand & 0x1F) as i32,
+            BabyInstruction::Jump(operand) => (0b000 << 13) | (operand & 0x1F) as i32,
+            BabyInstruction::RelativeJump(operand) => (0b100 << 13) | (operand & 0x1F) as i32,
+            BabyInstruction::Negate(operand) => (0b010 << 13) | (operand & 0x1F) as i32,
+            BabyInstruction::Store(operand) => (0b110 << 13) | (operand & 0x1F) as i32,
+            BabyInstruction::Subtract(operand) => (0b001 << 13) | (operand & 0x1F) as i32,
             BabyInstruction::SkipNextIfNegative => 0b011 << 13 as i32,
             BabyInstruction::Stop => 0b111 << 13 as i32,
             BabyInstruction::AbsoluteValue(v) => *v
@@ -121,13 +116,13 @@ impl BabyInstruction {
 
     /// Encodes an array of instructions into an array of program instructions. 
     /// 
-    /// Takes a vector of tuples containing [BabyInstruction] and the memory 
-    /// address operand ([u16]), returns an array of program instruction values, 
-    /// this can be used to initialise [BabyModel][crate::core::BabyModel]. 
+    /// Takes a vector of [BabyInstruction] and the memory, returns an array of 
+    /// program instruction values, this can be used to initialise 
+    /// [BabyModel][crate::core::BabyModel]. 
     /// 
     /// # Parameters
     /// 
-    /// * `instructions` - A vector of [BabyInstruction] and the memory address operand. 
+    /// * `instructions` - A vector of [BabyInstruction]. 
     ///  
     /// # Example 
     /// ```
@@ -135,11 +130,11 @@ impl BabyInstruction {
     /// use baby_emulator::errors::{BabyError, BabyErrors};
     /// 
     /// let instrs = vec![
-    ///     (BabyInstruction::Negate, 5),
-    ///     (BabyInstruction::Subtract, 5),
-    ///     (BabyInstruction::Store, 6),
-    ///     (BabyInstruction::Negate, 6),
-    ///     (BabyInstruction::Stop, 0)
+    ///     BabyInstruction::Negate(5),
+    ///     BabyInstruction::Subtract(5),
+    ///     BabyInstruction::Store(6),
+    ///     BabyInstruction::Negate(6),
+    ///     BabyInstruction::Stop,
     /// ];
     /// let mut main_store = BabyInstruction::to_numbers(instrs);
     /// main_store[5] = 5;
@@ -147,11 +142,34 @@ impl BabyInstruction {
     /// let model = BabyModel::new_with_program(main_store);
     /// ```
     /// 
-    pub fn to_numbers(instructions: Vec<(BabyInstruction, u16)>) -> [i32; MEMORY_WORDS] {
+    pub fn to_numbers(instructions: Vec<BabyInstruction>) -> [i32; MEMORY_WORDS] {
         let res: [usize; MEMORY_WORDS] = core::array::from_fn(|i| i + 1);
         res.map(|i| {
-            if let Some((inst, op)) = instructions.get(i) { inst.to_number(*op) }
+            if let Some(instr) = instructions.get(i) { instr.to_number() }
             else { 0 }
         })
     }
+
+    /// Gets the operand memory address value from within the 
+    /// instruction enum. 
+    /// 
+    /// Will cast the operand to [usize] since all operands are 
+    /// memory addresses, this type can be used to index into the 
+    /// memory array, also bytewise ands it with `0x1F` so that 
+    /// the returned value will not index outside the memory array. 
+    /// 
+    /// If the instruction does not have an operand or is 
+    /// [BabyInstruction::AbsoluteValue] then it will return 0. 
+    pub fn get_operand(&self) -> usize {
+        match self {
+            BabyInstruction::Jump(operand) => *operand as usize & 0x1F,
+            BabyInstruction::RelativeJump(operand) => *operand as usize & 0x1F,
+            BabyInstruction::Negate(operand) => *operand as usize & 0x1F,
+            BabyInstruction::Store(operand) => *operand as usize & 0x1F,
+            BabyInstruction::Subtract(operand) => *operand as usize & 0x1F,
+            BabyInstruction::SkipNextIfNegative => 0,
+            BabyInstruction::Stop => 0,
+            BabyInstruction::AbsoluteValue(_) => 0,
+        }
+    } 
 }
