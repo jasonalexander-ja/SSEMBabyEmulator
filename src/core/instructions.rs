@@ -202,8 +202,8 @@ mod tests {
         assert_eq!(BabyInstruction::from_number(0b0010_0000_0000_0101), BabyInstruction::Subtract(5));
         assert_eq!(BabyInstruction::from_number(0b1010_0000_0000_0101), BabyInstruction::Subtract(5));
         
-        assert_eq!(BabyInstruction::from_number(0b0110_0000_0000_0101), BabyInstruction::SkipNextIfNegative);
-        assert_eq!(BabyInstruction::from_number(0b1110_0000_0000_0101), BabyInstruction::Stop);
+        assert_eq!(BabyInstruction::from_number(0b0110_0000_0000_0000), BabyInstruction::SkipNextIfNegative);
+        assert_eq!(BabyInstruction::from_number(0b1110_0000_0000_0000), BabyInstruction::Stop);
     }
 
     #[test]
