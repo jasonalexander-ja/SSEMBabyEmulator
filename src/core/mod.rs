@@ -30,12 +30,12 @@
 //! use baby_emulator::core::instructions::BabyInstruction;
 //! 
 //! let instrs = vec![
-//!     (BabyInstruction::Negate, 5),
-//!     (BabyInstruction::Subtract, 5),
-//!     (BabyInstruction::Store, 6),
-//!     (BabyInstruction::Negate, 6),
-//!     (BabyInstruction::Stop, 0),
-//!     (BabyInstruction::AbsoluteValue(5), 0),
+//!     BabyInstruction::Negate(5),
+//!     BabyInstruction::Subtract(5),
+//!     BabyInstruction::Store(6),
+//!     BabyInstruction::Negate(6),
+//!     BabyInstruction::Stop,
+//!     BabyInstruction::AbsoluteValue(5),
 //! ];
 //! let main_store = BabyInstruction::to_numbers(instrs);
 //! let model = BabyModel::new_with_program(main_store);
@@ -60,9 +60,13 @@
 //! * [BabyModel::subtract][crate::core::BabyModel::subtract]
 //! * [BabyModel::test][crate::core::BabyModel::test]
 //! 
+//! --------
+//! 
 //! You can also use [BabyModel::execute][crate::core::BabyModel::execute]
-//! this will execute the next commands loaded from the memory, returning 
-//! [InstrResult][crate::core::InstrResult] that will either be the 
+//! this will execute the next instruction loaded from the memory, automatically 
+//! getting the operand and calling the correct instruction method on the model. 
+//! 
+//! Returning [InstrResult][crate::core::InstrResult] that will either be the 
 //! new model, or a [BabyErrors][crate::core::errors::BabyErrors] detailing the 
 //! error encountered (this can be simply encountering a stop command). 
 //! 
@@ -77,20 +81,25 @@
 //! }
 //! ```
 //! 
+//! --------
+//! 
 //! To run a model continuously until an error is encountered, you can 
-//! use a for let loop. 
+//! use [BabyModel::run_loop][crate::core::BabyModel::run_loop], this will call
+//! execute on each sucessive generated model until either an error is 
+//! encountered (such as [BabyErrors::Stop][crate::core::errors::BabyErrors::Stop])
+//! or the specified iterations limmit is hit. 
+//! 
+//! Returns a tuple of the last model state and the error encountered.  
 //! ```
 //! use baby_emulator::core::BabyModel;
-//! use baby_emulator::errors::BabyError;
+//! use baby_emulator::core::errors::BabyErrors;
+//! use baby_emulator::core::errors::BabyError;
 //! 
-//! let mut model = BabyModel::new_example_program();
-//! loop {
-//!     model = match model.execute() {
-//!         Ok(m) => m,
-//!         Err(_) => break
-//!     }
+//! let model = BabyModel::new_example_program();
+//! match model.run_loop(100) {
+//!     (model, BabyErrors::Stop(_)) => println!("{}", model.core_dump()),
+//!     (_, err) => println!("{}", err.get_descriptor())
 //! }
-//! println!("{}", model.core_dump());
 //! ```
 //! 
 
@@ -98,6 +107,8 @@ use std::ops::Neg;
 use errors::Stop;
 use errors::BabyErrors;
 use instructions::BabyInstruction;
+
+use self::errors::IterationsExceeded;
 
 
 /// Contains potential errors thrown during emulation. 
@@ -198,7 +209,7 @@ impl BabyModel {
             BabyInstruction::Store(6),
             BabyInstruction::Negate(6),
             BabyInstruction::Stop,
-            BabyInstruction::AbsoluteValue(5),
+            BabyInstruction::AbsoluteValue(-5),
         ];
         let main_store = BabyInstruction::to_numbers(instrs);
 
@@ -214,10 +225,10 @@ impl BabyModel {
     /// 
     /// Decodes the instruction value in the instruction register and performs 
     /// the relevant operation on the data within the model, will return all the
-    /// updated data in a new [Ok(BabyModel)] assuming no errors encountered.  
+    /// updated data in a new [Ok(BabyModel)] assuming no errors encountered. 
     /// 
     /// # Returns 
-    /// - `Ok(InstrResult)`: A new model instance with all data updated as per 
+    /// - `Ok(BabyModel)`: A new model instance with all data updated as per 
     ///     the instruction, loaded with the next instruction. 
     /// - `Err(BabyErrors)`: An enum detailing errors encountered when 
     ///     executing the instruction. 
@@ -225,26 +236,70 @@ impl BabyModel {
     /// # Example 
     /// ```
     /// use baby_emulator::core::BabyModel;
-    /// use baby_emulator::errors::{BabyError, BabyErrors};
     /// 
-    /// fn run_model(model: BabyModel) {
-    ///     let mut result = model.execute();
-    ///     while let Ok(new_model) = result {
-    ///         result = new_model.execute();
-    ///     }
-    ///     match result {
-    ///         Err(BabyErrors::Stop(_)) => println!("Sucess! "),
-    ///         _ => println!("Something went wrong. ")
+    /// let mut model = BabyModel::new_example_program();
+    /// loop {
+    ///     model = match model.execute() {
+    ///         Ok(m) => m,
+    ///         Err(_) => break
     ///     }
     /// }
+    /// println!("{}", model.core_dump());
     /// ```
     /// 
     pub fn execute(&self) -> InstrResult {
+        let (operand_value, instruction) = self.decode_instruction();
+
+        self.dispatch_instruction(instruction, operand_value)
+    }
+
+    /// Decodes the instruction in [BabyModel].`instruction` from the numeric value 
+    /// to [BabyInstruction] and the [i32] value pointed to by the instruction operand. 
+    pub fn decode_instruction(&self) -> (i32, BabyInstruction) {
         let instruction = BabyInstruction::from_number(self.instruction);
         let operand = instruction.get_operand();
         let operand_value = self.main_store[operand];
+        (operand_value, instruction)
+    }
 
-        self.dispatch_instruction(instruction, operand_value)
+    /// Executes the instructions in memory until an error is thrown or
+    /// a limmit is hit. 
+    /// 
+    /// Kepps calling [BabyModel::execute] on each sucesssive iteration
+    /// until either an error is thrown (such as [BabyErrors::Stop]) or 
+    /// the number of iterations hits the `max_iter` value. 
+    /// 
+    /// Returns a tuple of the model in its final state plus the error 
+    /// thrown, error will be [BabyErrors::IterationExceeded] if 
+    /// iterations exceeded. 
+    /// 
+    /// # Parameters
+    /// * `max_iter` - The maximum number of iterations of executing successive 
+    ///     instructions.
+    /// 
+    /// # Example 
+    /// ```
+    /// use baby_emulator::core::BabyModel;
+    /// use baby_emulator::core::errors::BabyErrors;
+    /// use baby_emulator::core::errors::BabyError;
+    /// 
+    /// let model = BabyModel::new_example_program();
+    /// match model.run_loop(100) {
+    ///     (model, BabyErrors::Stop(_)) => println!("{}", model.core_dump()),
+    ///     (_, err) => println!("{}", err.get_descriptor())
+    /// }
+    /// ```
+    /// 
+    pub fn run_loop(&self, max_iter: usize) -> (BabyModel, BabyErrors) {
+        let mut model = self.clone();
+        for _ in 0..max_iter {
+            model = match model.execute() {
+                Ok(m) => m,
+                Err(e) => return (model, e)
+            }
+        }
+        let err = IterationsExceeded::new(max_iter, model.clone());
+        (model, BabyErrors::IterationExceeded(err))
     }
 
     fn dispatch_instruction(&self, instruction: BabyInstruction, operand_value: i32) -> InstrResult {
@@ -269,7 +324,7 @@ impl BabyModel {
     /// to the last significant 5 bits of `address`, means jumping cannot be indexed outside
     /// of the memory, program execution will then proceed from this address. 
     /// 
-    /// # Arguments
+    /// # Parameters
     /// 
     /// * `address` - The memory address to jump to. 
     /// 
@@ -292,7 +347,7 @@ impl BabyModel {
     /// of the result, this allows the jump to "loop" back to the start 
     /// of the memory, program execution will then proceed from this address. 
     /// 
-    /// # Arguments 
+    /// # Parameters 
     /// 
     /// * `offset` - The value to offset the [BabyModel].`instruction_address` to. 
     /// 
@@ -317,7 +372,7 @@ impl BabyModel {
     /// the least significant 5 bits as to only index within the 
     /// allocated memory. 
     /// 
-    /// # Arguments
+    /// # Parameters
     /// 
     /// * `value` - The value to negate. 
     /// 
@@ -343,13 +398,14 @@ impl BabyModel {
     /// the least significant 5 bits as to only index within the 
     /// allocated memory. 
     /// 
-    /// # Arguments
+    /// # Parameters
     /// 
     /// * `address` - The address to store the accumulator to. 
     /// 
     pub fn store(&self, address: i32) -> BabyModel {
+        let address = (address & 0x1F) as usize;
         let mut main_store = self.main_store.clone();
-        main_store[address as usize] = self.accumulator;
+        main_store[(address & 0x1F) as usize] = self.accumulator;
         let instruction_address = (self.instruction_address + 1) & 0x1F;
         let instruction = main_store[instruction_address as usize] as u16;
         BabyModel { 
@@ -370,7 +426,7 @@ impl BabyModel {
     /// memory, using this to get the next instruction from the memory and 
     /// storing it in [BabyModel].`instruction` register. 
     /// 
-    /// # Arguments
+    /// # Parameters
     /// 
     /// * `value` - The value to subtract from the accumulator. 
     /// 
@@ -394,7 +450,7 @@ impl BabyModel {
     /// as to only index within the allocated memory, using this to get the next 
     /// instruction from the memory and storing it in [BabyModel].`instruction` register. 
     /// 
-    /// # Arguments
+    /// # Parameters
     /// 
     /// * `value` - The value to subtract from the accumulator. 
     /// 
@@ -419,20 +475,13 @@ impl BabyModel {
     /// # Example 
     /// ```
     /// use baby_emulator::core::BabyModel;
-    /// use baby_emulator::errors::{BabyError, BabyErrors};
+    /// use baby_emulator::core::errors::BabyErrors;
+    /// use baby_emulator::core::errors::BabyError;
     /// 
-    /// fn run_model(model: BabyModel) {
-    ///     let mut result = model.execute();
-    ///     let mut last_model = BabyModel::new();
-    ///     while let Ok(new_model) = result {
-    ///         last_model = new_model.clone();
-    ///         result = new_model.execute();
-    ///     }
-    ///     match result {
-    ///         // Shows the state of the model when it ends execution. 
-    ///         Err(BabyErrors::Stop(_)) => println!("Sucess! \n{}", last_model.core_dump()),
-    ///         _ => println!("Something went wrong. \n{}", last_model.core_dump())
-    ///     }
+    /// let model = BabyModel::new_example_program();
+    /// match model.run_loop(100) {
+    ///     (model, BabyErrors::Stop(_)) => println!("{}", model.core_dump()),
+    ///     (_, err) => println!("{}", err.get_descriptor())
     /// }
     /// ```
     pub fn core_dump(&self) -> String {
@@ -449,5 +498,171 @@ impl BabyModel {
         }
         res += "\n";
         return res;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_new_with_program() {
+        let model = BabyModel::new_with_program([5; MEMORY_WORDS]);
+        assert_eq!(model.instruction, 5);
+    }
+
+    #[test]
+    fn test_new_example_program() {
+        let model = BabyModel::new_example_program();
+        assert_eq!(model.instruction, 16389)
+    }
+
+    #[test]
+    fn test_decode_instruction() {
+        let main_store: [i32; MEMORY_WORDS] = core::array::from_fn(|i| i as i32);
+        let model = BabyModel {
+            main_store,
+            accumulator: 0,
+            instruction_address: 0,
+            instruction: 16383
+        };
+        let (value, instruction) = model.decode_instruction();
+        assert_eq!(instruction, BabyInstruction::Subtract(31));
+        assert_eq!(value, 31);
+    }
+
+    #[test]
+    fn test_run_loop() {
+        let model = BabyModel::new_example_program();
+        let (new_model, err) = model.run_loop(1);
+        assert_eq!(new_model.accumulator, 5);
+        match err {
+            BabyErrors::IterationExceeded(err) => {
+                assert_eq!(err.end_model.accumulator, 5);
+                assert_eq!(err.end_model.instruction_address, 1);
+                assert_eq!(err.end_model.instruction, model.main_store[1] as u16);
+                assert_eq!(err.max_iter, 1);
+            }
+            _ => assert!(false)
+        }
+    }
+
+    #[test]
+    fn test_jump_in_range() {
+        let main_store: [i32; MEMORY_WORDS] = core::array::from_fn(|i| i as i32);
+        let model = BabyModel::new_with_program(main_store);
+        let new_model = model.jump(5);
+        assert_eq!(new_model.instruction, 5);
+        assert_eq!(new_model.instruction_address, 5);
+    }
+
+    #[test]
+    fn test_jump_out_range() {
+        let main_store: [i32; MEMORY_WORDS] = core::array::from_fn(|i| i as i32);
+        let model = BabyModel::new_with_program(main_store);
+        let new_model = model.jump(32);
+        assert_eq!(new_model.instruction, 0);
+        assert_eq!(new_model.instruction_address, 0);
+    }
+
+    #[test]
+    fn test_relative_jump_in_range() {
+        let main_store: [i32; MEMORY_WORDS] = core::array::from_fn(|i| i as i32);
+        let model = BabyModel {
+            main_store,
+            accumulator: 0,
+            instruction_address: 2,
+            instruction: 2
+        };
+        let new_model = model.relative_jump(5);
+        assert_eq!(new_model.instruction, 7);
+        assert_eq!(new_model.instruction_address, 7);
+    }
+
+    #[test]
+    fn test_relative_jump_out_range() {
+        let main_store: [i32; MEMORY_WORDS] = core::array::from_fn(|i| i as i32);
+        let model = BabyModel {
+            main_store,
+            accumulator: 0,
+            instruction_address: 2,
+            instruction: 2
+        };
+        let new_model = model.relative_jump(30);
+        assert_eq!(new_model.instruction, 0);
+        assert_eq!(new_model.instruction_address, 0);
+    }
+
+    #[test]
+    fn test_negate() {
+        let main_store: [i32; MEMORY_WORDS] = core::array::from_fn(|i| i as i32);
+        let model = BabyModel {
+            main_store,
+            accumulator: 0,
+            instruction_address: 31,
+            instruction: 31
+        };
+        let new_model = model.negate(5);
+        assert_eq!(new_model.accumulator, -5);
+        assert_eq!(new_model.instruction, 0);
+        assert_eq!(new_model.instruction_address, 0);
+    }
+
+    #[test]
+    fn test_store() {
+        let main_store: [i32; MEMORY_WORDS] = core::array::from_fn(|i| i as i32);
+        let model = BabyModel {
+            main_store,
+            accumulator: 5,
+            instruction_address: 31,
+            instruction: 31
+        };
+        let new_model = model.store(32);
+        assert_eq!(new_model.main_store[0], 5);
+        assert_eq!(new_model.instruction, 5);
+        assert_eq!(new_model.instruction_address, 0);
+    }
+
+    #[test]
+    fn test_subtract() {
+        let main_store: [i32; MEMORY_WORDS] = core::array::from_fn(|i| i as i32);
+        let model = BabyModel {
+            main_store,
+            accumulator: 5,
+            instruction_address: 31,
+            instruction: 31
+        };
+        let new_model = model.subtract(5);
+        assert_eq!(new_model.accumulator, 0);
+        assert_eq!(new_model.instruction, 0);
+        assert_eq!(new_model.instruction_address, 0);
+    }
+
+    #[test]
+    fn test_test_negative() {
+        let main_store: [i32; MEMORY_WORDS] = core::array::from_fn(|i| i as i32);
+        let model = BabyModel {
+            main_store,
+            accumulator: -5,
+            instruction_address: 31,
+            instruction: 31
+        };
+        let new_model = model.test();
+        assert_eq!(new_model.instruction, 1);
+        assert_eq!(new_model.instruction_address, 1);
+    }
+
+    #[test]
+    fn test_test_positive() {
+        let main_store: [i32; MEMORY_WORDS] = core::array::from_fn(|i| i as i32);
+        let model = BabyModel {
+            main_store,
+            accumulator: 5,
+            instruction_address: 31,
+            instruction: 31
+        };
+        let new_model = model.test();
+        assert_eq!(new_model.instruction, 0);
+        assert_eq!(new_model.instruction_address, 0);
     }
 }

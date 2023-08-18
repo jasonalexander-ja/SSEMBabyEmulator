@@ -13,9 +13,10 @@
 
 
 use crate::core::instructions::BabyInstruction;
+use crate::core::BabyModel;
 
 /// Defines standard behaviour for any thrown errors. 
-pub trait BabyError: Clone + Copy {
+pub trait BabyError: Clone {
     /// Gets a string describing the error. 
     fn get_descriptor(&self) -> String;
     /// Gets the instruction being executed when the error was thrown. 
@@ -25,39 +26,35 @@ pub trait BabyError: Clone + Copy {
 }
 
 /// An enum containing potential errors allowing them to be handled. 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub enum BabyErrors {
     /// The emulator has encountered a stop instruction.  
-    Stop(Stop)
-}
-
-impl BabyErrors {
-
-    /// Gets the inner error. 
-    /// 
-    /// This method gets the inner [BabyError] derived error allowing for 
-    /// immediate access to the root errors methods detailing the errors 
-    /// description and metadata. 
-    /// 
-    pub fn get_baby_error(&self) -> &impl BabyError {
-        match self {
-            BabyErrors::Stop(s) => s
-        }
-    }
+    Stop(Stop),
+    /// The emulator has hit the maximum number of iterations. 
+    IterationExceeded(IterationsExceeded)
 }
 
 impl BabyError for BabyErrors {
 
     fn get_descriptor(&self) -> String {
-        self.get_baby_error().get_descriptor()
+        match self {
+            BabyErrors::Stop(s) => s.get_descriptor(),
+            BabyErrors::IterationExceeded(s) => s.get_descriptor()
+        }
     }
 
     fn get_instruction(&self) -> BabyInstruction {
-        self.get_baby_error().get_instruction()
+        match self {
+            BabyErrors::Stop(s) => s.get_instruction(),
+            BabyErrors::IterationExceeded(s) => s.get_instruction()
+        }
     }
 
     fn at(&self) -> u16 {
-        self.get_baby_error().at()
+        match self {
+            BabyErrors::Stop(s) => s.at(),
+            BabyErrors::IterationExceeded(s) => s.at()
+        }
     }
 }
 
@@ -102,5 +99,53 @@ impl BabyError for Stop {
 
     fn at(&self) -> u16 {
         self.at
+    }
+}
+
+/// An error thrown when the emulator execution iteration loop exceeds
+/// the maximum specified number of iterations. 
+/// 
+/// Contains the state of the model when the iteration was exceeded. 
+/// 
+/// # Example 
+/// ```
+/// use baby_emulator::core::BabyModel;
+/// use baby_emulator::core::errors::BabyErrors;
+/// use baby_emulator::core::errors::BabyError;
+/// 
+/// let model = BabyModel::new_example_program();
+/// match model.run_loop(100) {
+///     (model, BabyErrors::Stop(_)) => println!("{}", model.core_dump()),
+///     (_, BabyErrors::IterationExceeded(err)) => 
+///         println!("Iterations exceeded {}", err.get_descriptor()),
+///     (_, err) => println!("{}", err.get_descriptor()),
+/// }
+/// ```
+/// 
+#[derive(Clone)]
+pub struct IterationsExceeded {
+    /// The maximum number of specified iterations. 
+    pub max_iter: usize,
+    /// The state of the model when iterations were exceeded. 
+    pub end_model: BabyModel,
+}
+
+impl IterationsExceeded {
+    pub fn new(max_iter: usize, end_model: BabyModel) -> IterationsExceeded {
+        IterationsExceeded { max_iter, end_model }
+    }
+}
+
+impl BabyError for IterationsExceeded {
+    fn get_descriptor(&self) -> String {
+        format!("Emulation execution iterations hit limmit of {}. \n", self.max_iter)
+    }
+    
+    fn get_instruction(&self) -> BabyInstruction {
+        BabyInstruction::from_number(self.end_model.instruction)
+    }
+
+    fn at(&self) -> u16 {
+        self.end_model.instruction_address
     }
 }

@@ -11,13 +11,14 @@
 //! Any new error types and object should be added to this enum. 
 //! 
 
-/// Defines common behaviour for any error thrown by the linker.  
+/// Defines common behaviour for any error thrown by the linker. 
 pub trait LinkerError {
     /// Returns a short string describing the error. 
     fn describe(&self) -> String;
 }
 
 /// Possible errors thrown when resolving a tag name. 
+#[derive(Clone, Debug, PartialEq)]
 pub enum TagError {
     /// A tag reference could not be resolved. 
     UnknownTagName(String)
@@ -32,6 +33,7 @@ impl LinkerError for TagError {
 }
 
 /// Possible errors thrown during the linking process. 
+#[derive(Debug, PartialEq)]
 pub enum LinkingError {
     /// Error thrown during resolving a tag. 
     TagError(TagError)

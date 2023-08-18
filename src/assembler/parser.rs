@@ -43,7 +43,7 @@ use super::parse_errors::{
 
 
 /// Represents the possible nations for a value. 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum Value {
     /// A literal value. 
     Value(i32),
@@ -69,10 +69,10 @@ impl Value {
         let value = value.trim();
         match value {
             v if v.starts_with("0x") => Self::parse_hex(v.replace("0x", "")),
-            v if v.starts_with("0x") => Self::parse_decimal(v.replace("0d", "")),
-            v if v.starts_with("0x") => Self::parse_octal(v.replace("0o", "")),
-            v if v.starts_with("0x") => Self::parse_binary(v.replace("0b", "")),
-            v if v.starts_with("0x") => Self::parse_tag_name(v.replace("$", "")),
+            v if v.starts_with("0d") => Self::parse_decimal(v.replace("0d", "")),
+            v if v.starts_with("0o") => Self::parse_octal(v.replace("0o", "")),
+            v if v.starts_with("0b") => Self::parse_binary(v.replace("0b", "")),
+            v if v.starts_with("$") => Self::parse_tag_name(v.replace("$", "")),
             _ => Err(ValueParseError::InvalidValue(value.to_string()))
         }
     }
@@ -80,40 +80,41 @@ impl Value {
     /// Tries to parse a hex string. 
     /// 
     /// Returns a [ValueParseError] if it fails. 
-    pub fn parse_hex(v: String) -> Result<Value, ValueParseError> {
-        match i32::from_str_radix(&v, 16) {
-            Ok(v) => Ok(Value::Value(v)),
-            Err(v) => Err(ValueParseError::InvalidHex(v.to_string()))
-        }
+    pub fn parse_hex(value: String) -> Result<Value, ValueParseError> {
+        let res = match i32::from_str_radix(&value, 16) {
+            Ok(v) => v,
+            Err(_) => return Err(ValueParseError::InvalidHex(value.to_string()))
+        };
+        Ok(Value::Value(res))
     }
 
     /// Tries to parse a decimal string. 
     /// 
     /// Returns a [ValueParseError] if it fails. 
-    pub fn parse_decimal(v: String) -> Result<Value, ValueParseError> {
-        match i32::from_str_radix(&v, 10) {
+    pub fn parse_decimal(value: String) -> Result<Value, ValueParseError> {
+        match i32::from_str_radix(&value, 10) {
             Ok(v) => Ok(Value::Value(v)),
-            Err(v) => Err(ValueParseError::InvalidDecimal(v.to_string()))
+            Err(_) => Err(ValueParseError::InvalidDecimal(value.to_string()))
         }
     }
 
     /// Tries to parse an octal string. 
     /// 
     /// Returns a [ValueParseError] if it fails. 
-    pub fn parse_octal(v: String) -> Result<Value, ValueParseError> {
-        match i32::from_str_radix(&v, 8) {
+    pub fn parse_octal(value: String) -> Result<Value, ValueParseError> {
+        match i32::from_str_radix(&value, 8) {
             Ok(v) => Ok(Value::Value(v)),
-            Err(v) => Err(ValueParseError::InvalidOctal(v.to_string()))
+            Err(_) => Err(ValueParseError::InvalidOctal(value.to_string()))
         }
     }
 
     /// Tries to parse a binary string. 
     /// 
     /// Returns a [ValueParseError] if it fails. 
-    pub fn parse_binary(v: String) -> Result<Value, ValueParseError> {
-        match i32::from_str_radix(&v, 2) {
+    pub fn parse_binary(value: String) -> Result<Value, ValueParseError> {
+        match i32::from_str_radix(&value, 2) {
             Ok(v) => Ok(Value::Value(v)),
-            Err(v) => Err(ValueParseError::InvalidBinary(v.to_string()))
+            Err(_) => Err(ValueParseError::InvalidBinary(value.to_string()))
         }
     }
 
@@ -130,21 +131,21 @@ impl Value {
 }
 
 /// Represents all the instructions. 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum Instruction {
-    /// See [crate::core::instructions::BabyInstruction::Jump].
+    /// See [BabyInstruction::Jump][crate::core::instructions::BabyInstruction::Jump].
     Jump(Value),
-    /// See [crate::core::instructions::BabyInstruction::RelativeJump].
+    /// See [BabyInstruction::RelativeJump][crate::core::instructions::BabyInstruction::RelativeJump].
     RelativeJump(Value),
-    /// See [crate::core::instructions::BabyInstruction::Negate].
+    /// See [BabyInstruction::Negate][crate::core::instructions::BabyInstruction::Negate].
     Negate(Value),
-    /// See [crate::core::instructions::BabyInstruction::Store].
+    /// See [BabyInstruction::Store][crate::core::instructions::BabyInstruction::Store].
     Store(Value),
-    /// See [crate::core::instructions::BabyInstruction::Subtract].
+    /// See [BabyInstruction::Subtract][crate::core::instructions::BabyInstruction::Subtract].
     Subtract(Value),
-    /// See [crate::core::instructions::BabyInstruction::SkipNextIfNegative].
+    /// See [BabyInstruction::SkipNextIfNegative][crate::core::instructions::BabyInstruction::SkipNextIfNegative].
     Test,
-    /// See [crate::core::instructions::BabyInstruction::Stop].
+    /// See [BabyInstruction::Stop][crate::core::instructions::BabyInstruction::Stop].
     Stop,
 }
 
@@ -163,7 +164,7 @@ impl Instruction {
     /// | CMP   | Skip next instruction if the accumulator contains a negative value                                                                                    |
     /// | STP   | Stop                                                                                                                                                  |
     /// 
-    /// * # is a always a memory address, and will try to be parsed into a [Value]. 
+    /// * `#` is a always a memory address, and will try to be parsed into a [Value]. 
     /// 
     pub fn parse(instruction: &str) -> Result<Instruction, InstructionError> {
         let instruction = instruction.trim().to_lowercase();
@@ -201,12 +202,13 @@ impl Instruction {
     /// | Test      | Skip next instruction if the accumulator contains a negative value                                                                                    |
     /// | Stop      | Stop                                                                                                                                                  |
     /// 
-    /// * # is a always a memory address 
+    /// * `#` is a always a memory address 
     /// 
     pub fn parse_ogn(instruction: &str) -> Result<Instruction, InstructionError> {
+        let instruction = instruction.trim();
         let v = Value::Value(0);
         match instruction {
-            c if c.ends_with(", CL") => 
+            c if c.ends_with(", Cl") && !c.starts_with("Add ") => 
                 Self::make_instruction(Instruction::Jump(v), c.replace(", Cl", "")),
             c if c.starts_with("Add ") && c.ends_with(", Cl") => 
                 Self::make_instruction(Instruction::RelativeJump(v), c.replace("Add ", "").replace(", Cl", "")),
@@ -280,7 +282,7 @@ impl Instruction {
 }
 
 /// Represents all the possible syntaxes for a line. 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum LineType {
     /// A named reference to a position in the program code. 
     /// 
@@ -414,6 +416,7 @@ pub fn parse_absolute(tag: String) -> Result<LineType, LineParseError> {
 ///     _ => panic!()
 /// }
 /// ```
+/// 
 pub fn parse_instruction(instruction: String) -> Result<LineType, LineParseError> {
     match Instruction::parse(&instruction) {
         Ok(v) => Ok(LineType::Instruction(v)),
@@ -421,7 +424,7 @@ pub fn parse_instruction(instruction: String) -> Result<LineType, LineParseError
     }
 }
 
-/// Parses an asm instruction original modern notation. 
+/// Parses an asm instruction original notation. 
 /// 
 /// Will return [LineParseError::InstructionError] if the instruction isn't 
 /// recognised or there is an error parsing the operand value. 
@@ -435,9 +438,382 @@ pub fn parse_instruction(instruction: String) -> Result<LineType, LineParseError
 ///     _ => panic!()
 /// }
 /// ```
+/// 
 pub fn parse_instruction_ogn(instruction: String) -> Result<LineType, LineParseError> {
     match Instruction::parse_ogn(&instruction) {
         Ok(v) => Ok(LineType::Instruction(v)),
         Err(e) => Err(LineParseError::InstructionError(e))
     }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_strip_comments() {
+        assert_eq!(strip_comments("jmp 0x3; hello world"), "jmp 0x3".to_owned());
+        assert_eq!(strip_comments("jmp 0x3"), "jmp 0x3".to_owned());
+    }
+
+    #[test]
+    fn test_parse_tag() {
+        match parse_tag("  test  ".to_owned()) {
+            Ok(LineType::Tag(v)) => assert_eq!(v, "test".to_owned()),
+            _ => assert!(false),
+        }
+        match parse_tag("test foo".to_owned()) {
+            Err(LineParseError::TagError(TagError::TagNameWhitespace(v))) => assert_eq!(v, "test foo".to_owned()),
+            _ => assert!(false),
+        }
+    }
+
+    #[test]
+    fn test_parse_absolute() {
+        match parse_absolute("  0xA  ".to_owned()) { 
+            Ok(LineType::Absolute(Value::Value(v))) => assert_eq!(v, 10),
+            _ => assert!(false)
+        }
+        match parse_absolute("  0d10  ".to_owned()) { 
+            Ok(LineType::Absolute(Value::Value(v))) => assert_eq!(v, 10),
+            _ => assert!(false)
+        }
+        match parse_absolute("  0o12  ".to_owned()) { 
+            Ok(LineType::Absolute(Value::Value(v))) => assert_eq!(v, 10),
+            _ => assert!(false)
+        }
+        match parse_absolute("  0b1010  ".to_owned()) { 
+            Ok(LineType::Absolute(Value::Value(v))) => assert_eq!(v, 10),
+            _ => assert!(false)
+        }
+
+        match parse_absolute("  $tag  ".to_owned()) {
+            Ok(LineType::Absolute(Value::Tag(v))) => assert_eq!(v, "tag".to_owned()),
+            _ => assert!(false)
+        }
+        match parse_absolute("dasdasdas".to_owned()) {
+            Err(LineParseError::AbsoluteError(AbsoluteError::ValueError(ValueParseError::InvalidValue(v)))) => 
+                assert_eq!(v, "dasdasdas".to_owned()),
+                _ => assert!(false)
+        }
+    }
+
+    #[test]
+    fn test_parse_absolute_err() {
+        match parse_absolute("0xK".to_owned()) { 
+            Err(LineParseError::AbsoluteError(AbsoluteError::ValueError(ValueParseError::InvalidHex(v)))) => 
+                assert_eq!(v, "K"),
+            _ => assert!(false)
+        }
+        match parse_absolute("0d1J".to_owned()) { 
+            Err(LineParseError::AbsoluteError(AbsoluteError::ValueError(ValueParseError::InvalidDecimal(v)))) => 
+                assert_eq!(v, "1J"),
+            _ => assert!(false)
+        }
+        match parse_absolute("0o9".to_owned()) { 
+            Err(LineParseError::AbsoluteError(AbsoluteError::ValueError(ValueParseError::InvalidOctal(v)))) => 
+                assert_eq!(v, "9"),
+            _ => assert!(false)
+        }
+        match parse_absolute("0b10a10".to_owned()) { 
+            Err(LineParseError::AbsoluteError(AbsoluteError::ValueError(ValueParseError::InvalidBinary(v)))) => 
+                assert_eq!(v, "10a10"),
+            _ => assert!(false)
+        }
+
+        match parse_absolute("$ta g".to_owned()) {
+            Err(LineParseError::AbsoluteError(AbsoluteError::ValueError(ValueParseError::InvalidTagName(v)))) => 
+                assert_eq!(v, "ta g".to_owned()),
+            _ => assert!(false)
+        }
+    }
+
+    #[test]
+    fn test_parse_instruction() {
+        match parse_instruction("  jmp   0xA  ".to_owned()) {
+            Ok(LineType::Instruction(Instruction::Jump(Value::Value(v)))) => assert_eq!(v, 10),
+            _ => assert!(false)
+        }
+        match parse_instruction("  jrp   0xA  ".to_owned()) {
+            Ok(LineType::Instruction(Instruction::RelativeJump(Value::Value(v)))) => assert_eq!(v, 10),
+            _ => assert!(false)
+        }
+        match parse_instruction("  ldn   0xA  ".to_owned()) {
+            Ok(LineType::Instruction(Instruction::Negate(Value::Value(v)))) => assert_eq!(v, 10),
+            _ => assert!(false)
+        }
+        match parse_instruction("  sto   0xA  ".to_owned()) {
+            Ok(LineType::Instruction(Instruction::Store(Value::Value(v)))) => assert_eq!(v, 10),
+            _ => assert!(false)
+        }
+        match parse_instruction("  sub   0xA  ".to_owned()) {
+            Ok(LineType::Instruction(Instruction::Subtract(Value::Value(v)))) => assert_eq!(v, 10),
+            _ => assert!(false)
+        }
+        match parse_instruction("  cmp  ".to_owned()) {
+            Ok(LineType::Instruction(Instruction::Test)) => assert!(true),
+            _ => assert!(false)
+        }
+        match parse_instruction("  stp  ".to_owned()) {
+            Ok(LineType::Instruction(Instruction::Stop)) => assert!(true),
+            _ => assert!(false)
+        }
+        match parse_instruction("sadasdasd".to_owned()) {
+            Err(LineParseError::InstructionError(InstructionError::UnkownInstruction(v))) => 
+                assert_eq!(v, "sadasdasd".to_owned()),
+            _ => assert!(false)
+        }
+    }
+
+    #[test]
+    fn test_parse_instruction_ogn() {
+        match parse_instruction_ogn("  0xA  , Cl  ".to_owned()) {
+            Ok(LineType::Instruction(Instruction::Jump(Value::Value(v)))) => assert_eq!(v, 10),
+            _ => assert!(false)
+        }
+        match parse_instruction_ogn("  Add   0xA  , Cl  ".to_owned()) {
+            Ok(LineType::Instruction(Instruction::RelativeJump(Value::Value(v)))) => assert_eq!(v, 10),
+            _ => assert!(false)
+        }
+        match parse_instruction_ogn("  -  0xA  , C  ".to_owned()) {
+            Ok(LineType::Instruction(Instruction::Negate(Value::Value(v)))) => assert_eq!(v, 10),
+            _ => assert!(false)
+        }
+        match parse_instruction_ogn("  c, 0xA  ".to_owned()) {
+            Ok(LineType::Instruction(Instruction::Store(Value::Value(v)))) => assert_eq!(v, 10),
+            _ => assert!(false)
+        }
+        match parse_instruction_ogn("  SUB   0xA  ".to_owned()) {
+            Ok(LineType::Instruction(Instruction::Subtract(Value::Value(v)))) => assert_eq!(v, 10),
+            _ => assert!(false)
+        }
+        match parse_instruction_ogn("  Test  ".to_owned()) {
+            Ok(LineType::Instruction(Instruction::Test)) => assert!(true),
+            _ => assert!(false)
+        }
+        match parse_instruction_ogn("  Stop  ".to_owned()) {
+            Ok(LineType::Instruction(Instruction::Stop)) => assert!(true),
+            _ => assert!(false)
+        }
+        match parse_instruction_ogn("sadasdasd".to_owned()) {
+            Err(LineParseError::InstructionError(InstructionError::UnkownInstruction(v))) => 
+                assert_eq!(v, "sadasdasd".to_owned()),
+            _ => assert!(false)
+        }
+    }
+}
+
+#[cfg(test)]
+mod instruction_test {
+
+    use super::*;
+
+    #[test]
+    fn test_instruction_parse() {
+        match parse_instruction("jmp 0xA".to_owned()) {
+            Ok(LineType::Instruction(Instruction::Jump(Value::Value(v)))) => assert_eq!(v, 10),
+            _ => assert!(false)
+        }
+        match parse_instruction("jrp 0xA".to_owned()) {
+            Ok(LineType::Instruction(Instruction::RelativeJump(Value::Value(v)))) => assert_eq!(v, 10),
+            _ => assert!(false)
+        }
+        match parse_instruction("ldn 0xA".to_owned()) {
+            Ok(LineType::Instruction(Instruction::Negate(Value::Value(v)))) => assert_eq!(v, 10),
+            _ => assert!(false)
+        }
+        match parse_instruction("sto 0xA".to_owned()) {
+            Ok(LineType::Instruction(Instruction::Store(Value::Value(v)))) => assert_eq!(v, 10),
+            _ => assert!(false)
+        }
+        match parse_instruction("sub 0xA".to_owned()) {
+            Ok(LineType::Instruction(Instruction::Subtract(Value::Value(v)))) => assert_eq!(v, 10),
+            _ => assert!(false)
+        }
+        match parse_instruction("cmp".to_owned()) {
+            Ok(LineType::Instruction(Instruction::Test)) => assert!(true),
+            _ => assert!(false)
+        }
+        match parse_instruction("stp".to_owned()) {
+            Ok(LineType::Instruction(Instruction::Stop)) => assert!(true),
+            _ => assert!(false)
+        }
+        match parse_instruction("sadasdasd".to_owned()) {
+            Err(LineParseError::InstructionError(InstructionError::UnkownInstruction(v))) => 
+                assert_eq!(v, "sadasdasd".to_owned()),
+            _ => assert!(false)
+        }
+    }
+
+    #[test]
+    fn test_instruction_parse_ogn() {
+        match Instruction::parse_ogn("0xA, Cl") {
+            Ok(Instruction::Jump(Value::Value(v))) => assert_eq!(v, 10),
+            _ => assert!(false)
+        }
+        match Instruction::parse_ogn("Add 0xA, Cl") {
+            Ok(Instruction::RelativeJump(Value::Value(v))) => assert_eq!(v, 10),
+            _ => assert!(false)
+        }
+        match Instruction::parse_ogn("-0xA, C") {
+            Ok(Instruction::Negate(Value::Value(v))) => assert_eq!(v, 10),
+            _ => assert!(false)
+        }
+        match Instruction::parse_ogn("c, 0xA") {
+            Ok(Instruction::Store(Value::Value(v))) => assert_eq!(v, 10),
+            _ => assert!(false)
+        }
+        match Instruction::parse_ogn("SUB 0xA") {
+            Ok(Instruction::Subtract(Value::Value(v))) => assert_eq!(v, 10),
+            _ => assert!(false)
+        }
+        match Instruction::parse_ogn("Test") {
+            Ok(Instruction::Test) => assert!(true),
+            _ => assert!(false)
+        }
+        match Instruction::parse_ogn("Stop") {
+            Ok(Instruction::Stop) => assert!(true),
+            _ => assert!(false)
+        }
+        match Instruction::parse_ogn("sadasdasd") {
+            Err(InstructionError::UnkownInstruction(v)) => 
+                assert_eq!(v, "sadasdasd".to_owned()),
+            _ => assert!(false)
+        }
+    }
+
+    #[test]
+    fn test_get_operand() {
+        assert!(Instruction::Jump(Value::Value(10)).get_operand() == Value::Value(10));
+        assert!(Instruction::RelativeJump(Value::Value(10)).get_operand() == Value::Value(10));
+        assert!(Instruction::Negate(Value::Value(10)).get_operand() == Value::Value(10));
+        assert!(Instruction::Store(Value::Value(10)).get_operand() == Value::Value(10));
+        assert!(Instruction::Subtract(Value::Value(10)).get_operand() == Value::Value(10));
+        assert!(Instruction::Test.get_operand() == Value::Value(0));
+        assert!(Instruction::Stop.get_operand() == Value::Value(0));
+    }
+
+    #[test]
+    fn test_descrine() {
+        assert!(Instruction::Jump(Value::Value(10)).describe() == "jump".to_owned());
+        assert!(Instruction::RelativeJump(Value::Value(10)).describe() == "relative jump".to_owned());
+        assert!(Instruction::Negate(Value::Value(10)).describe() == "negate".to_owned());
+        assert!(Instruction::Store(Value::Value(10)).describe() == "store".to_owned());
+        assert!(Instruction::Subtract(Value::Value(10)).describe() == "subtract".to_owned());
+        assert!(Instruction::Test.describe() == "test".to_owned());
+        assert!(Instruction::Stop.describe() == "stop".to_owned());
+    }
+
+}
+
+#[cfg(test)]
+mod value_tests {
+
+    use super::*;
+
+    #[test]
+    fn test_parse_hex() {
+        match Value::parse_hex("A".to_owned()) {
+            Ok(v) => assert!(v == Value::Value(10)),
+            Err(_) => assert!(false)
+        }
+        match Value::parse_hex("-A".to_owned()) {
+            Ok(v) => assert!(v == Value::Value(-10)),
+            Err(_) => assert!(false)
+        }
+        match Value::parse_hex("K".to_owned()) {
+            Err(v) => assert!(v == ValueParseError::InvalidHex("K".to_owned())),
+            Ok(_) => assert!(false)
+        }
+    }
+
+    #[test]
+    fn test_parse_decimal() {
+        match Value::parse_decimal("10".to_owned()) {
+            Ok(v) => assert!(v == Value::Value(10)),
+            Err(_) => assert!(false)
+        }
+        match Value::parse_decimal("-10".to_owned()) {
+            Ok(v) => assert!(v == Value::Value(-10)),
+            Err(_) => assert!(false)
+        }
+        match Value::parse_decimal("K".to_owned()) {
+            Err(v) => assert!(v == ValueParseError::InvalidDecimal("K".to_owned())),
+            Ok(_) => assert!(false)
+        }
+    }
+
+    #[test]
+    fn test_parse_octal() {
+        match Value::parse_octal("12".to_owned()) {
+            Ok(v) => assert!(v == Value::Value(10)),
+            Err(_) => assert!(false)
+        }
+        match Value::parse_octal("-12".to_owned()) {
+            Ok(v) => assert!(v == Value::Value(-10)),
+            Err(_) => assert!(false)
+        }
+        match Value::parse_octal("K".to_owned()) {
+            Err(v) => assert!(v == ValueParseError::InvalidOctal("K".to_owned())),
+            Ok(_) => assert!(false)
+        }
+    }
+
+    #[test]
+    fn test_parse_binary() {
+        match Value::parse_binary("1010".to_owned()) {
+            Ok(v) => assert!(v == Value::Value(10)),
+            Err(_) => assert!(false)
+        }
+        match Value::parse_binary("-1010".to_owned()) {
+            Ok(v) => assert!(v == Value::Value(-10)),
+            Err(_) => assert!(false)
+        }
+        match Value::parse_binary("K".to_owned()) {
+            Err(v) => assert!(v == ValueParseError::InvalidBinary("K".to_owned())),
+            Ok(_) => assert!(false)
+        }
+    }
+
+    #[test]
+    fn test_parse_tag() {
+        match Value::parse_tag_name("tag".to_owned()) {
+            Ok(v) => assert!(v == Value::Tag("tag".to_owned())),
+            Err(_) => assert!(false)
+        }
+        match Value::parse_tag_name("ta g".to_owned()) {
+            Err(v) => assert!(v == ValueParseError::InvalidTagName("ta g".to_owned())),
+            Ok(_) => assert!(false)
+        }
+    }
+
+    #[test]
+    fn test_parse() {
+        match Value::parse("  0xA  ") {
+            Ok(v) => assert!(v == Value::Value(10)),
+            Err(_) => assert!(false)
+        }
+        match Value::parse("  0d10  ") {
+            Ok(v) => assert!(v == Value::Value(10)),
+            Err(_) => assert!(false)
+        }
+        match Value::parse("  0o12  ") {
+            Ok(v) => assert!(v == Value::Value(10)),
+            Err(_) => assert!(false)
+        }
+        match Value::parse("  0b1010  ") {
+            Ok(v) => assert!(v == Value::Value(10)),
+            Err(_) => assert!(false)
+        }
+        match Value::parse("  $foo  ") {
+            Ok(v) => assert!(v == Value::Tag("foo".to_owned())),
+            Err(_) => assert!(false)
+        }
+        match Value::parse("  sadfdsfsda  ") {
+            Err(v) => assert!(v == ValueParseError::InvalidValue("sadfdsfsda".to_owned())),
+            Ok(_) => assert!(false),
+        }
+    }
+
 }

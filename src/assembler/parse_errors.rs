@@ -22,6 +22,7 @@ pub trait ParseError {
 }
 
 /// Thrown when an invalid value is encountered. 
+#[derive(PartialEq)]
 pub enum ValueParseError {
     /// No discernable value detected where one is expected. 
     InvalidValue(String),
@@ -51,6 +52,7 @@ impl ParseError for ValueParseError {
 }
 
 /// Thrown when errors are found parsing Baby asm instructions. 
+#[derive(PartialEq)]
 pub enum InstructionError {
     /// A given instruction isn't correct. 
     UnkownInstruction(String),
@@ -68,6 +70,7 @@ impl ParseError for InstructionError {
 }
 
 /// Thrown when an error was encountered parsing an absolute value. 
+#[derive(PartialEq)]
 pub enum AbsoluteError {
     /// Attempt to parse a value to an absolute value encountered an error. 
     ValueError(ValueParseError)
@@ -82,6 +85,7 @@ impl ParseError for AbsoluteError {
 }
 
 /// Thrown when an error is encountered trying to parse a tag declaration. 
+#[derive(PartialEq)]
 pub enum TagError {
     /// Thrown when a delcared tag name has whitespace. 
     TagNameWhitespace(String)
@@ -96,6 +100,7 @@ impl ParseError for TagError {
 }
 
 /// Thrown when an error is encountered parsing a Baby asm line. 
+#[derive(PartialEq)]
 pub enum LineParseError {
     /// Thrown when an error is encountered parsing a tag declaration. 
     TagError(TagError),
