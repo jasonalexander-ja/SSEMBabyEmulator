@@ -33,7 +33,7 @@
 //! 
 //! Cargo.toml:
 //! ```text
-//! baby-emulator = "32"
+//! baby-emulator = "0.1.4"
 //! ```
 //! 
 //! ## Example 
