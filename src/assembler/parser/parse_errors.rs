@@ -18,7 +18,11 @@ use super::Instruction;
 /// Defines common behaviour for all errors thrown whilst parsing Baby asm. 
 pub trait ParseError {
     /// Returns a string describing an error thrown. 
-    fn describe(&self) -> String;
+    /// 
+    /// # Parameters
+    /// * `line_breaks` - Add in line breaks between each embedded error. 
+    /// 
+    fn describe(&self, line_breaks: bool) -> String;
 }
 
 /// Thrown when an invalid value is encountered. 
@@ -39,7 +43,7 @@ pub enum ValueParseError {
 }
 
 impl ParseError for ValueParseError {
-    fn describe(&self) -> String {
+    fn describe(&self, _line_breaks: bool) -> String {
         match self {
             ValueParseError::InvalidValue(v) => format!("The value: {}; is an invalid value. ", v),
             ValueParseError::InvalidHex(v) => format!("The value: {}; is invalid hex value. ", v),
@@ -61,10 +65,11 @@ pub enum InstructionError {
 }
 
 impl ParseError for InstructionError {
-    fn describe(&self) -> String { 
+    fn describe(&self, line_breaks: bool) -> String { 
+        let line_break = if line_breaks { "\n" } else { "" };
         match self {
             InstructionError::UnkownInstruction(v) => format!("The specified instruction {} is not known. ", v),
-            InstructionError::OperandValueParseError(c, v) => format!("Failed to parse operand for {}. {}", c.describe(), v.describe())
+            InstructionError::OperandValueParseError(c, v) => format!("Failed to parse operand for {}. {line_break} {}", c.describe(), v.describe(line_breaks))
         }
     }
 }
@@ -77,9 +82,10 @@ pub enum AbsoluteError {
 }
 
 impl ParseError for AbsoluteError {
-    fn describe(&self) -> String {
+    fn describe(&self, line_breaks: bool) -> String {
+        let line_break = if line_breaks { "\n" } else { "" };
         match self {
-            AbsoluteError::ValueError(v) => format!("Failed to parse value for absolute value declaration. {}", v.describe())
+            AbsoluteError::ValueError(v) => format!("Failed to parse value for absolute value declaration. {line_break} {}", v.describe(line_breaks))
         }
     }
 }
@@ -92,7 +98,7 @@ pub enum TagError {
 }
 
 impl ParseError for TagError {
-    fn describe(&self) -> String {
+    fn describe(&self, _line_breaks: bool) -> String {
         match self {
             TagError::TagNameWhitespace(v) => format!("The tag name `{}` is invalid. ", v)
         }
@@ -111,11 +117,12 @@ pub enum LineParseError {
 }
 
 impl ParseError for LineParseError {
-    fn describe(&self) -> String {
+    fn describe(&self, line_breaks: bool) -> String {
+        let line_break = if line_breaks { "\n" } else { "" };
         match self {
-            LineParseError::TagError(v) => format!("Error parsing a tag line, {}", v.describe()),
-            LineParseError::AbsoluteError(v) => format!("Error parsing an absolute value line. {}", v.describe()),
-            LineParseError::InstructionError(v) => format!("Error parsing a instruction line. {}", v.describe()),
+            LineParseError::TagError(v) => format!("Error parsing a tag line, {}", v.describe(line_breaks)),
+            LineParseError::AbsoluteError(v) => format!("Error parsing an absolute value line. {line_break} {}", v.describe(line_breaks)),
+            LineParseError::InstructionError(v) => format!("Error parsing a instruction line. {line_break} {}", v.describe(line_breaks)),
         }
     }
 }

@@ -74,6 +74,18 @@ fn test_link_tags_fail() {
 }
 
 #[test]
+fn test_link_tags_beyond() {
+    let tags: HashMap<String, i32> = HashMap::from([("foo".to_owned(), 5)]);
+    let lines: Vec<UnlinkedData> = vec![UnlinkedData::Instruction(Instruction::Jump(Value::Value(5))); 33];
+    match link_tags(lines, tags) {
+        Err(e) => {
+            assert_eq!(e, LinkingError::MemoryExceedingError(MemoryExceedingError { linked_size: 33 }))
+        },
+        Ok(_) => assert!(false),
+    }
+}
+
+#[test]
 fn test_link_parsed_lines_correct() {
     let lines: Vec<LineType> = vec![
         LineType::Tag("start".to_owned()),

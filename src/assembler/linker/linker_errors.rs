@@ -11,10 +11,17 @@
 //! Any new error types and object should be added to this enum. 
 //! 
 
+use crate::core::MEMORY_WORDS;
+
+
 /// Defines common behaviour for any error thrown by the linker. 
 pub trait LinkerError {
     /// Returns a short string describing the error. 
-    fn describe(&self) -> String;
+    /// 
+    /// # Parameters
+    /// * `line_breaks` - Add in line breaks between each embedded error. 
+    /// 
+    fn describe(&self, line_breaks: bool) -> String;
 }
 
 /// Possible errors thrown when resolving a tag name. 
@@ -25,10 +32,23 @@ pub enum TagError {
 }
 
 impl LinkerError for TagError {
-    fn describe(&self) -> String {
+    fn describe(&self, _line_breaks: bool) -> String {
         match self {
             TagError::UnknownTagName(s) => format!("The tag reference `{}` is not declared. ", s)
         }
+    }
+}
+
+/// The linked program stack is greater than the Baby's memory. 
+#[derive(Clone, Debug, PartialEq)]
+pub struct MemoryExceedingError {
+    /// The number of words in the linked program stack.  
+    pub linked_size: usize
+}
+
+impl LinkerError for MemoryExceedingError {
+    fn describe(&self, _line_breaks: bool) -> String {
+        format!("The linked program stack is `{}` words in length, maximum {MEMORY_WORDS}. ", self.linked_size)
     }
 }
 
@@ -36,13 +56,17 @@ impl LinkerError for TagError {
 #[derive(Debug, PartialEq)]
 pub enum LinkingError {
     /// Error thrown during resolving a tag. 
-    TagError(TagError)
+    TagError(TagError),
+    /// The linked program stack is greater than the Baby's memory. 
+    MemoryExceedingError(MemoryExceedingError)
 }
 
 impl LinkerError for LinkingError {
-    fn describe(&self) -> String {
+    fn describe(&self, line_breaks: bool) -> String {
+        let line_break = if line_breaks { "\n" } else { "" };
         match self {
-            LinkingError::TagError(t) => format!("There was an error linking a tag. {}", t.describe())
+            LinkingError::TagError(t) => format!("There was an error linking a tag. {line_break} {}", t.describe(line_breaks)),
+            LinkingError::MemoryExceedingError(m) => format!("There was an error positiong the program. {line_break} {}", m.describe(line_breaks))
         }
     }
 }

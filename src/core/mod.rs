@@ -141,7 +141,7 @@ pub const MEMORY_WORDS: usize = 32;
 pub type InstrResult = Result<BabyModel, BabyErrors>;
 
 /// The model containing the data in all the registers and memory to be operated upon. 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct BabyModel {
     /// The memory (RAM), this is just 32 words of 32 bits, 
     /// originally famously stored on a Williams Tube.  
@@ -305,7 +305,17 @@ impl BabyModel {
         (model, BabyErrors::IterationExceeded(err))
     }
 
-    fn dispatch_instruction(&self, instruction: BabyInstruction, operand_value: i32) -> InstrResult {
+    /// Takes a [BabyInstruction] and a dereferenced operand value [i32] and 
+    /// calls the correct instruction method.  
+    /// 
+    /// Returns the result of the method call, if [BabyInstruction::Stop] is 
+    /// will return [BabyErrors::Stop].
+    /// 
+    /// # Parameters
+    /// * `instruction` - The instruction to execute. 
+    /// * `operand_value` - The value from memory referenced by the actual operand. 
+    /// 
+    pub fn dispatch_instruction(&self, instruction: BabyInstruction, operand_value: i32) -> InstrResult {
         let res = match instruction {
             BabyInstruction::Jump(_) => self.jump(operand_value),
             BabyInstruction::RelativeJump(_) => self.relative_jump(operand_value),

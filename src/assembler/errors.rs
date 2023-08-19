@@ -23,7 +23,7 @@
 //! fn assemble_and_run(asm: String) {
 //!     let instructions = match assemble(&asm, false) {
 //!         Ok(v) => (),
-//!         Err(e) => { println!("{}", e.describe()); return; }
+//!         Err(e) => { println!("{}", e.describe(true)); return; }
 //!     };
 //! }
 //! ```
@@ -44,10 +44,14 @@ pub enum AssemblyError {
 impl AssemblyError {
 
     /// Returns a string describing the error. 
-    pub fn describe(&self) -> String {
+    /// 
+    /// # Parameters
+    /// * `line_breaks` - Add in line breaks between each embedded error. 
+    /// 
+    pub fn describe(&self, line_breaks: bool) -> String {
         match self {
-            AssemblyError::ParserError(i, p) => format!("An error was thrown during parsing at line {}. {}", i, p.describe()),
-            AssemblyError::LinkerError(l) => format!("An error was thrown during linking. {}", l.describe()),
+            AssemblyError::ParserError(i, p) => format!("An error was thrown during parsing at line {}. {}", i, p.describe(line_breaks)),
+            AssemblyError::LinkerError(l) => format!("An error was thrown during linking. {}", l.describe(line_breaks)),
         }
     }
 }

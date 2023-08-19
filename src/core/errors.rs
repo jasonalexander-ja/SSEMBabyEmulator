@@ -26,7 +26,7 @@ pub trait BabyError: Clone {
 }
 
 /// An enum containing potential errors allowing them to be handled. 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum BabyErrors {
     /// The emulator has encountered a stop instruction.  
     Stop(Stop),
@@ -82,7 +82,7 @@ impl BabyError for BabyErrors {
 /// }
 /// println!("{}", model.core_dump());
 /// ```
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Stop {
     /// The memory address where the stop was encountered. 
     pub at: u16
@@ -122,7 +122,7 @@ impl BabyError for Stop {
 /// }
 /// ```
 /// 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct IterationsExceeded {
     /// The maximum number of specified iterations. 
     pub max_iter: usize,

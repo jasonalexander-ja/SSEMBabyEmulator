@@ -20,8 +20,8 @@
 //! 
 //! ```
 //! use baby_emulator::assembler::assemble; 
-//! use baby_emulator::core::instructions::BabyInstruction;
-//! use baby_emulator::core::BabyModel;
+//! use baby_emulator::core::{BabyModel, instructions::BabyInstruction};
+//! 
 //! 
 //! const ASM: &str = 
 //! "
@@ -43,7 +43,7 @@
 //! fn main() {
 //!     let instructions = match assemble(&String::from(ASM), false) {
 //!         Ok(v) => v,
-//!         Err(e) => { println!("{}", e.describe()); return; }
+//!         Err(e) => { println!("{}", e.describe(true)); return; }
 //!     };
 //!     let main_store = BabyInstruction::to_numbers(instructions);
 //! 
@@ -196,6 +196,9 @@ pub mod errors;
 /// run the assembled program.
 /// 
 /// Returns [AssemblyError] if an error is encountered at any point. 
+/// 
+/// Possible errors are that a tag reference that cannot be bound or the assembled 
+/// program stack is greater than the Baby's total available memory. 
 /// 
 /// # Parameters
 /// * `asm` - The assembly string. 

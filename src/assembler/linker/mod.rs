@@ -15,13 +15,12 @@
 //! emulation model. 
 //! 
 //! This will return [LinkingError][crate::assembler::linker_errors::LinkingError] 
-//! if a tag reference cannot be bound. 
+//! if a tag reference cannot be bound or if the passed program stack is greater 
+//! than the total available memory. 
 //! 
 //! # Example
 //! ```
-//! use baby_emulator::assembler::parser;
-//! use baby_emulator::assembler::linker;
-//! use baby_emulator::assembler::errors::AssemblyError;
+//! use baby_emulator::assembler::{parser, linker, errors::AssemblyError};
 //! use baby_emulator::core::instructions::BabyInstruction;
 //! 
 //! 
@@ -40,9 +39,9 @@
 
 use std::collections::HashMap;
 use std::convert::identity;
-use crate::core::instructions::BabyInstruction;
+use crate::core::{MEMORY_WORDS, instructions::BabyInstruction};
 use super::parser::{LineType, Value, Instruction};
-use linker_errors::{LinkingError, TagError};
+use linker_errors::{LinkingError, TagError, MemoryExceedingError};
 
 
 /// Contains types for handling errors found during linking. 
@@ -77,7 +76,8 @@ pub fn link_parsed_lines(lines: Vec<LineType>) -> Result<Vec<BabyInstruction>, L
 /// If the all the contained value expressions can be resolved without error it will
 /// return an [Ok] with a vector of each instruction [BabyInstruction]. 
 /// 
-/// Returns a [LinkingError] if an error is encountered resolving the values. 
+/// Returns a [LinkingError] if an error is encountered resolving the values or if 
+/// the program stack is greater than the total Baby memory. 
 /// 
 /// # Parameters
 /// * `preprocessed_lines` - The unlinked data. 
@@ -86,6 +86,10 @@ pub fn link_parsed_lines(lines: Vec<LineType>) -> Result<Vec<BabyInstruction>, L
 fn link_tags(preprocessed_lines: Vec<UnlinkedData>, tag_values: HashMap<String, i32>) -> 
     Result<Vec<BabyInstruction>, LinkingError> {
     let mut instructions: Vec<BabyInstruction> = vec![];
+
+    if preprocessed_lines.len() > MEMORY_WORDS { 
+        return Err(LinkingError::MemoryExceedingError(MemoryExceedingError { linked_size: preprocessed_lines.len() }));
+     }
 
     for line in preprocessed_lines {
         let val = match line.resolve(&tag_values) {
