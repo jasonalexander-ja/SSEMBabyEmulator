@@ -4,8 +4,8 @@
 [![Released API docs](https://docs.rs/baby-emulator/badge.svg)](https://docs.rs/baby-emulator)
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
-This library provides a collections of types and methods for emulating 
-the [Machester Baby](https://www.scienceandindustrymuseum.org.uk/objects-and-stories/baby-and-modern-computing) the first program stored 
+This library provides a collections of types and methods for emulating & assembling code for 
+the [Machester Baby](https://www.scienceandindustrymuseum.org.uk/objects-and-stories/baby-and-modern-computing), the first program stored 
 computer. 
 
 ## Explaination
@@ -17,130 +17,113 @@ providing a familiar (abeit, primitive) programming environment to anyone
 familiar with assembly, this library can be included  in a variety of 
 software and platforms allowing emulation functionality of this historic machine. 
 
+This library provides an interface for emulating the Baby as a bytecode 
+interpreter (`baby_emulator::core`), and also a library for assembling 
+asm using both modern and original asm notations into a format that 
+can be ran by the emulator (`baby_emulator::assmebler`). 
+
+Please log any questions or issues to the [GitHub repo](https://github.com/jasonalexander-ja/SSEMBabyEmulator).
+
 ## Installation 
 
 Command line:
-```
+```text
 cargo add baby-emulator
 ```
 
 Cargo.toml:
-```
+```text
 baby-emulator = "32"
 ```
 
 ## Example 
 
-The core of this library is `core::BabyModel`, this struct has 
-fields representing all of the Baby's internal registers and 
-32 word memory, you can initialise this struct with an array of 
-`[i32; 32]`, this array can contain the program code instructions 
-starting at position 0. 
+This shows a few short examples of what this library is capable of, designed to be a starting point allowing further experimentation by the "user". See
+the [docs](https://docs.rs/baby-emulator) for further examples and info. 
+
+### Bytecode Interpreter Emulation
+
+The core of this library is `baby_emulator::core::BabyModel`, 
+this struct has fields representing all of the Baby's internal 
+registers and 32 word memory, you can initialise this struct with 
+an array of `[i32; 32]`, this array can contain the program code 
+instructions starting at position 0. 
+
+This example runs an example program that adds 5 to 5 and stores 
+the result in the accumulator. Running here is done with the `run_loop`
+method, this method will simply execute sucessive instructions until 
+either an error is thrown (like a stop instruction), or the number
+os iterations exceeds the specified limmit. 
 
 ```rust
 use baby_emulator::core::BabyModel;
-use baby_emulator::errors::{BabyError, BabyErrors};
+use baby_emulator::core::errors::BabyErrors;
+use baby_emulator::core::errors::BabyError;
 
+let model = BabyModel::new_example_program();
+match model.run_loop(100) {
+    (model, BabyErrors::Stop(_)) => println!("{}", model.core_dump()),
+    (_, err) => println!("{}", err.get_descriptor())
+}
+```
+
+You can also single set through an emulation, executing a single 
+instruction at a time using the `execute` method and seeing the 
+direct result. 
+
+```rust
+use baby_emulator::core::BabyModel;
+use baby_emulator::core::errors::BabyError;
+
+let model = BabyModel::new_example_program();
+match model.execute() {
+    Ok(m) => println!("{}", m.core_dump()),
+    Err(e) => println!("Error {}", e.get_descriptor())
+}
+```
+
+### Assembly
+
+Here is an example of assembling a Baby asm string using 
+modern notation, then running the resultant program,
+see the `baby_emulator::assembler` docs for more information:
+
+```rust
+use baby_emulator::assembler::assemble; 
+use baby_emulator::core::{BabyModel, instructions::BabyInstruction};
+ 
+ 
+const ASM: &str = 
+"
+ldn $start_value  ; Loads 10 into the accumulator 
+  
+:loop_start
+sub $subtract_val ; Subtract 1 from the accumulator 
+cmp               ; Skip the next jump instruction if the accumulator is negative 
+jmp $loop_start   ; Jump to the start of the loop 
+stp               ; Program stops when the accumulator is negative 
+  
+:subtract_val     ; Value to be subtracted
+abs 0d1
+  
+:start_value ; Value to start in the accumulator 
+abs 0d-10
+";
 
 fn main() {
-    let model = BabyModel::new_example_program();
-    let mut last_model = BabyModel::new();
-    let mut result = model.execute();
-    while let Ok(new_model) = result {
-        last_model = new_model.clone();
-        result = new_model.execute();
+    let instructions = match assemble(&String::from(ASM), false) {
+        Ok(v) => v,
+        Err(e) => { println!("{}", e.describe(true)); return; }
+    };
+    let main_store = BabyInstruction::to_numbers(instructions);
+ 
+    let mut model = BabyModel::new_with_program(main_store);
+    loop {
+        model = match model.execute() {
+            Ok(m) => m,
+            Err(_) => break
+        };
     }
-    match result {
-        Err(BabyErrors::Stop(_)) => println!("{}", last_model.accumulator),
-        _ => println!("Something went wrong. ")
-    }
-}
-```
-
-## Useage 
-
-### Programming
-
-The Baby accepts a 16 bit instructions, of which the upper 3 
-bits denotes one of 7 instructions, each instruction has a helper
-in `core::instructions::BabyInstructions` enum:
-
-| Binary   | Instruction Enum   | Description                                                                                                                                                    |
-|----------|--------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 000      | Jump               | Jump to the instruction at the address obtained from the specified memory address (absolute unconditional jump)                                     |
-| 100      | RelativeJump       | Jump to the instruction at the program counter plus (+) the relative value obtained from the specified memory address (relative unconditional jump) |
-| 010      | Negate             | Take the number from the specified memory address, negate it, and load it into the accumulator                                                         |
-| 110      | Store              | Store the number in the accumulator to the specified memory address                                                                                    |
-| 001\|101 | Subtract           | Subtract the number at the specified memory address from the value in accumulator, and store the result in the accumulator                             |
-| 011      | SkipNextIfNegative | Skip next instruction if the accumulator contains a negative value                                                                                       |
-| 111      | Stop               | Stop                                                                                                                                                     |
-
-The remaining lower bits is the the operand, the operand is 
-a memory address for all but the `SkipIfNegative` and `Stop`
-instructions which do not use operands. 
-
-You can generate a program by making a vec of tuples containing 
-a `BabyInstructions` enum and `u16` operand, and then passing this off
-to `core::instructions::BabyInstructions::to_numbers` function,
-this will return a `[i32; 32]` array which can be used to initialise 
-a `BabyModel` ready for execution: 
-
-```rust
-use baby_emulator::core::{BabyModel, instructions::BabyInstruction};
-use baby_emulator::errors::{BabyError, BabyErrors};
-
-let instrs = vec![
-    (BabyInstruction::Negate, 5),
-    (BabyInstruction::Subtract, 5),
-    (BabyInstruction::Store, 6),
-    (BabyInstruction::Negate, 6),
-    (BabyInstruction::Stop, 0)
-];
-let mut main_store = BabyInstruction::to_numbers(instrs);
-main_store[5] = 5; // Initialise with data. 
-
-let model = BabyModel::new_with_program(main_store);
-```
-
-### Running 
-
-Once your model has been initalised, the one method you will need to
-use is `BabyModel::execute`, this method will look at the current 
-instruction, and will perform it, in the process modifying all the 
-values held within the model.
-
-If no issue is found then `BabyModel::execute` will return an `Ok`
-with a new model containing all the updated values in the registers
-and memories, and with the `BabyModel`.`instruction` set to the next
-instruction ready to be executed and `BodyModel`.`instruction_address`
-set to the memory address of that instruction. 
-
-If an issue is found then `BabyModel::execute` will return an `Err`
-containing an instance of `errors::BabyErrors` enum with which 
-error it is, and containing an inner derivative of `errors::BabyError`
-that holds the metadata on that error. 
-
-An error can simply be that a `Stop` instruction has been hit, and 
-there is nothing else more to execute, so the calling code should
-handle that. 
-
-
-To carry on from the above example: 
-```rust
-// We will store the state of the model when the last instruction is executed for debug purposes 
-let mut last_model = BabyModel::new();
-
-// We now just keep calling model.execute() until it's not `Ok`
-let mut result = model.execute();
-while let Ok(new_model) = result {
-    last_model = new_model.clone();
-    result = new_model.execute();
-}
-
-// Print out the result
-match result {
-    // If the program ran sucessfully, it would have encountered a stop 
-    Err(BabyErrors::Stop(_)) => println!("{}", last_model.accumulator),
-    _ => println!("Something went wrong. ")
+    println!("{}", model.core_dump());
 }
 ```

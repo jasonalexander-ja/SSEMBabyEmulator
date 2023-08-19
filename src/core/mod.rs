@@ -104,11 +104,8 @@
 //! 
 
 use std::ops::Neg;
-use errors::Stop;
-use errors::BabyErrors;
+use errors::{Stop, BabyErrors, IterationsExceeded};
 use instructions::BabyInstruction;
-
-use self::errors::IterationsExceeded;
 
 
 /// Contains potential errors thrown during emulation. 

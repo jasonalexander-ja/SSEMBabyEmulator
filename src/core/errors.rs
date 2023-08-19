@@ -11,9 +11,9 @@
 //! Any new error types and object should be added to this enum. 
 //! 
 
-
 use crate::core::instructions::BabyInstruction;
 use crate::core::BabyModel;
+
 
 /// Defines standard behaviour for any thrown errors. 
 pub trait BabyError: Clone {

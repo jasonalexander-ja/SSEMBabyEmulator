@@ -281,12 +281,3 @@ fn test_test_positive_dispatch() {
     assert_eq!(new_model.instruction, 0);
     assert_eq!(new_model.instruction_address, 0);
 }
-
-/*
-BabyInstruction::Jump
-BabyInstruction::RelativeJump
-BabyInstruction::Negate
-BabyInstruction::Store
-BabyInstruction::Subtract
-BabyInstruction::SkipNextIfNegative
-*/

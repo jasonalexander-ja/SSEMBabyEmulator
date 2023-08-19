@@ -11,7 +11,6 @@
 //! Any new error types and object should be added to this enum. 
 //! 
 
-
 use super::Instruction;
 
 
