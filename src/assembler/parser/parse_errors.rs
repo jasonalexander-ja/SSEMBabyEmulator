@@ -12,7 +12,7 @@
 //! 
 
 
-use super::parser::Instruction;
+use super::Instruction;
 
 
 /// Defines common behaviour for all errors thrown whilst parsing Baby asm. 

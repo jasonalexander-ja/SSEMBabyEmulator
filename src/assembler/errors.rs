@@ -29,8 +29,8 @@
 //! ```
 //! 
 
-use super::linker_errors::{LinkingError, LinkerError};
-use super::parse_errors::{LineParseError, ParseError}; 
+use super::linker::linker_errors::{LinkingError, LinkerError};
+use super::parser::parse_errors::{LineParseError, ParseError}; 
 
 
 /// Possble errors thrown at parts of the assembly process. 
