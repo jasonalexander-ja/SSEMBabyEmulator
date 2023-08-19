@@ -1,9 +1,9 @@
 //! # Linker Errors
 //! 
 //! This module includes all the possible errors that can be thrown 
-//! during linking, all error types implement [LinkerError][crate::assembler::linker_errors::LinkerError].
+//! during linking, all error types implement [LinkerError][crate::assembler::linker::errors::LinkerError].
 //! 
-//! The main type in this module is [LinkingError][crate::assembler::linker_errors::LinkingError]
+//! The main type in this module is [LinkingError][crate::assembler::linker::errors::LinkingError]
 //! whcih is an enum that has a branch for each possible error that can be thrown 
 //! with each branch wrapping the corresponding error type that contains metadata 
 //! on that error. 

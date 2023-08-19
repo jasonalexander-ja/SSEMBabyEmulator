@@ -10,7 +10,7 @@
 //! [AssemblyError::ParserError][crate::assembler::errors::AssemblyError::LinkerError] & [AssemblyError::LinkerError][crate::assembler::errors::AssemblyError::LinkerError].
 //! 
 //! These are wrappers for the overarching error types exported by 
-//! [assembler::parse_errors][crate::assembler::parse_errors] & [assembler::linker_errors][crate::assembler::linker_errors].
+//! [assembler::parser::errors][crate::assembler::parser::errors] & [assembler::linker::errors][crate::assembler::linker::errors].
 //! These represent the errors thrown by the parsing and linking. 
 //! 
 //! For simple debug purposes, [crate::assembler::errors::AssemblyError::describe]
@@ -29,8 +29,8 @@
 //! ```
 //! 
 
-use super::linker::linker_errors::{LinkingError, LinkerError};
-use super::parser::parse_errors::{LineParseError, ParseError}; 
+use super::linker::errors::{LinkingError, LinkerError};
+use super::parser::errors::{LineParseError, ParseError}; 
 
 
 /// Possble errors thrown at parts of the assembly process. 

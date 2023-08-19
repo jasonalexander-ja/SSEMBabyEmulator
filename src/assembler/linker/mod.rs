@@ -14,7 +14,7 @@
 //! This output can used with the [core][crate::core] module to make a runnable 
 //! emulation model. 
 //! 
-//! This will return [LinkingError][crate::assembler::linker_errors::LinkingError] 
+//! This will return [LinkingError][crate::assembler::linker::errors::LinkingError] 
 //! if a tag reference cannot be bound or if the passed program stack is greater 
 //! than the total available memory. 
 //! 
@@ -41,11 +41,11 @@ use std::collections::HashMap;
 use std::convert::identity;
 use crate::core::{MEMORY_WORDS, instructions::BabyInstruction};
 use super::parser::{LineType, Value, Instruction};
-use linker_errors::{LinkingError, TagError, MemoryExceedingError};
+use errors::{LinkingError, TagError, MemoryExceedingError};
 
 
 /// Contains types for handling errors found during linking. 
-pub mod linker_errors;
+pub mod errors;
 #[cfg(test)]
 mod tests;
 

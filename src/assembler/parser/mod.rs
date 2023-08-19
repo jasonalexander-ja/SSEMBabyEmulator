@@ -34,7 +34,7 @@
 //! ```
 //! 
 
-use parse_errors::{
+use errors::{
     LineParseError,
     TagError,
     AbsoluteError,
@@ -44,7 +44,7 @@ use parse_errors::{
 
 
 /// Contains types for handling errors during parsing. 
-pub mod parse_errors;
+pub mod errors;
 #[cfg(test)]
 mod tests;
 

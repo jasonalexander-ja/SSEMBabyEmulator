@@ -198,7 +198,7 @@ pub mod errors;
 /// Returns [AssemblyError] if an error is encountered at any point. 
 /// 
 /// Possible errors are that a tag reference that cannot be bound or the assembled 
-/// program stack is greater than the Baby's total available memory. 
+/// program stack is greater than the Baby's total available memory (see [MEMORY_WORDS][crate::core::MEMORY_WORDS]). 
 /// 
 /// # Parameters
 /// * `asm` - The assembly string. 
