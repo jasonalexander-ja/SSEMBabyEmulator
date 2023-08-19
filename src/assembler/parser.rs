@@ -18,7 +18,8 @@
 //! ```
 //! use baby_emulator::assembler::parser;
 //! use baby_emulator::assembler::linker;
-//! 
+//! use baby_emulator::assembler::errors::AssemblyError;
+//! use baby_emulator::core::instructions::BabyInstruction;
 //! 
 //! pub fn assemble(asm: &String) -> Result<Vec<BabyInstruction>, AssemblyError> {
 //!     let parse_result = match parser::parse_asm_string(asm, false) {
@@ -287,7 +288,7 @@ pub enum LineType {
     /// A named reference to a position in the program code. 
     /// 
     /// # Asm Example 
-    /// ```
+    /// ```text
     /// :start
     /// JMP $start ;jumps to the start of the program 
     /// ```
@@ -368,9 +369,9 @@ pub fn parse_line(line: &String, og_notation: bool) -> Result<LineType, LinePars
 /// 
 /// # Example
 /// ```
-/// use baby_emulator::assembler::parser::LineType;
+/// use baby_emulator::assembler::parser::strip_comments;
 /// 
-/// assert_eq!(LineType::strip_comments("sub 0xA ;foo"), "sub 0xA ".to_owned());
+/// assert_eq!(strip_comments("sub 0xA ;foo"), "sub 0xA ".to_owned());
 /// ```
 /// 
 pub fn strip_comments(line: &str) -> String {
@@ -409,9 +410,9 @@ pub fn parse_absolute(tag: String) -> Result<LineType, LineParseError> {
 /// 
 /// # Example
 /// ```
-/// use baby_emulator::assembler::parser::{LineType, Instruction};
+/// use baby_emulator::assembler::parser::{LineType, Instruction, parse_instruction};
 /// 
-/// match LineType::parse_instruction("stp".to_owned()) {
+/// match parse_instruction("stp".to_owned()) {
 ///     Ok(LineType::Instruction(Instruction::Stop)) => println!("Sucess. "),
 ///     _ => panic!()
 /// }
@@ -431,9 +432,9 @@ pub fn parse_instruction(instruction: String) -> Result<LineType, LineParseError
 /// 
 /// # Example
 /// ```
-/// use baby_emulator::assembler::parser::{LineType, Instruction};
+/// use baby_emulator::assembler::parser::{LineType, Instruction, parse_instruction_ogn};
 /// 
-/// match LineType::parse_instruction_ogn("Stop".to_owned()) {
+/// match parse_instruction_ogn("Stop".to_owned()) {
 ///     Ok(LineType::Instruction(Instruction::Stop)) => println!("Sucess. "),
 ///     _ => panic!()
 /// }

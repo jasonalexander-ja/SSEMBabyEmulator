@@ -127,7 +127,7 @@ impl BabyInstruction {
     /// # Example 
     /// ```
     /// use baby_emulator::core::{BabyModel, instructions::BabyInstruction};
-    /// use baby_emulator::errors::{BabyError, BabyErrors};
+    /// use baby_emulator::core::errors::{BabyError, BabyErrors};
     /// 
     /// let instrs = vec![
     ///     BabyInstruction::Negate(5),
@@ -179,48 +179,79 @@ mod tests {
 
     use super::*;
 
+    fn get_operation_desc() -> Vec<(BabyInstruction, String)> {
+        vec![
+            (BabyInstruction::Jump(0), "jump instruction".to_owned()),
+            (BabyInstruction::RelativeJump(0), "relative jump instruction".to_owned()),
+            (BabyInstruction::Negate(0), "negate instruction".to_owned()),
+            (BabyInstruction::Store(0), "store instruction".to_owned()),
+            (BabyInstruction::Subtract(0), "subtract instruction".to_owned()),
+            (BabyInstruction::SkipNextIfNegative, "skip next if negative instruction".to_owned()),
+            (BabyInstruction::Stop, "jump instruction".to_owned()),
+            (BabyInstruction::AbsoluteValue(5), format!("absolute value 5"))
+        ]
+    }
+
+    fn get_number_to_instruction() -> Vec<(u16, BabyInstruction)> {
+        vec![
+            (0b0000_0000_0000_0101, BabyInstruction::Jump(5)),
+            (0b1000_0000_0000_0101, BabyInstruction::RelativeJump(5)),
+            (0b0100_0000_0000_0101, BabyInstruction::Negate(5)),
+            (0b1100_0000_0000_0101, BabyInstruction::Store(5)),
+            (0b0010_0000_0000_0101, BabyInstruction::Subtract(5)),
+            (0b1010_0000_0000_0101, BabyInstruction::Subtract(5)),
+            (0b0110_0000_0000_0000, BabyInstruction::SkipNextIfNegative),
+            (0b1110_0000_0000_0000, BabyInstruction::Stop),
+        ]
+    }
+
+    fn get_instruction_to_no() -> Vec<(i32, BabyInstruction)> {
+        vec![
+            (0b0000_0000_0000_0101, BabyInstruction::Jump(5)),
+            (0b1000_0000_0000_0101, BabyInstruction::RelativeJump(5)),
+            (0b0100_0000_0000_0101, BabyInstruction::Negate(5)),
+            (0b1100_0000_0000_0101, BabyInstruction::Store(5)),
+            (0b0110_0000_0000_0000, BabyInstruction::SkipNextIfNegative),
+            (0b1110_0000_0000_0000, BabyInstruction::Stop),
+        ]
+    }
+
+    fn get_instructions_with_operands(op: u16, res: usize) -> Vec<(BabyInstruction, usize)> {
+        vec![
+            (BabyInstruction::Jump(op), res),
+            (BabyInstruction::RelativeJump(op), res),
+            (BabyInstruction::Negate(op), res),
+            (BabyInstruction::Store(op), res),
+            (BabyInstruction::Subtract(op), res),
+            (BabyInstruction::SkipNextIfNegative, 0),
+            (BabyInstruction::Stop, 0),
+            (BabyInstruction::AbsoluteValue(0), 0),
+        ]
+    }
+
     #[test]
     fn tests_get_instr_description() {
-        assert_eq!(BabyInstruction::Jump(0).get_instr_description(), "jump instruction".to_owned());
-        assert_eq!(BabyInstruction::RelativeJump(0).get_instr_description(), "relative jump instruction".to_owned());
-        assert_eq!(BabyInstruction::Negate(0).get_instr_description(), "negate instruction".to_owned());
-        assert_eq!(BabyInstruction::Store(0).get_instr_description(), "store instruction".to_owned());
-        assert_eq!(BabyInstruction::Subtract(0).get_instr_description(), "subtract instruction".to_owned());
-        assert_eq!(BabyInstruction::SkipNextIfNegative.get_instr_description(), "skip next if negative instruction".to_owned());
-        assert_eq!(BabyInstruction::Stop.get_instr_description(), "jump instruction".to_owned());
-        assert_eq!(BabyInstruction::AbsoluteValue(5).get_instr_description(), format!("absolute value 5"));
+        get_operation_desc().iter().for_each(|(i, r)| {
+            assert_eq!(i.get_instr_description(), *r);
+        });
     }
 
     #[test]
     fn test_from_number() {
-        assert_eq!(BabyInstruction::from_number(0b0000_0000_0000_0101), BabyInstruction::Jump(5));
-        assert_eq!(BabyInstruction::from_number(0b1000_0000_0000_0101), BabyInstruction::RelativeJump(5));
-
-        assert_eq!(BabyInstruction::from_number(0b0100_0000_0000_0101), BabyInstruction::Negate(5));
-        assert_eq!(BabyInstruction::from_number(0b1100_0000_0000_0101), BabyInstruction::Store(5));
-        
-        assert_eq!(BabyInstruction::from_number(0b0010_0000_0000_0101), BabyInstruction::Subtract(5));
-        assert_eq!(BabyInstruction::from_number(0b1010_0000_0000_0101), BabyInstruction::Subtract(5));
-        
-        assert_eq!(BabyInstruction::from_number(0b0110_0000_0000_0000), BabyInstruction::SkipNextIfNegative);
-        assert_eq!(BabyInstruction::from_number(0b1110_0000_0000_0000), BabyInstruction::Stop);
+        get_number_to_instruction().iter().for_each(|(n, i)| {
+            assert_eq!(BabyInstruction::from_number(*n), *i);
+        });
     }
 
     #[test]
     fn test_to_number() {
-        assert_eq!(BabyInstruction::Jump(5).to_number(), 0b0000_0000_0000_0101);
-        assert_eq!(BabyInstruction::RelativeJump(5).to_number(), 0b1000_0000_0000_0101);
-
-        assert_eq!(BabyInstruction::Negate(5).to_number(), 0b0100_0000_0000_0101);
-        assert_eq!(BabyInstruction::Store(5).to_number(), 0b1100_0000_0000_0101);
-
+        get_instruction_to_no().iter().for_each(|(n, i)| {
+            assert_eq!(i.to_number(), *n);
+        });
         assert!(
             BabyInstruction::Subtract(5).to_number() == 0b0010_0000_0000_0101 || 
             BabyInstruction::Subtract(5).to_number() == 0b1010_0000_0000_0101
         );
-        
-        assert_eq!(BabyInstruction::SkipNextIfNegative.to_number(), 0b0110_0000_0000_0000);
-        assert_eq!(BabyInstruction::Stop.to_number(), 0b1110_0000_0000_0000);
     }
 
     #[test]
@@ -243,27 +274,15 @@ mod tests {
 
     #[test]
     fn test_get_operand_in_range() {
-        assert_eq!(BabyInstruction::Jump(12).get_operand(), 12);
-        assert_eq!(BabyInstruction::RelativeJump(12).get_operand(), 12);
-        assert_eq!(BabyInstruction::Negate(12).get_operand(), 12);
-        assert_eq!(BabyInstruction::Store(12).get_operand(), 12);
-        assert_eq!(BabyInstruction::Subtract(12).get_operand(), 12);
-
-        assert_eq!(BabyInstruction::SkipNextIfNegative.get_operand(), 0);
-        assert_eq!(BabyInstruction::Stop.get_operand(), 0);
-        assert_eq!(BabyInstruction::AbsoluteValue(5).get_operand(), 0);
+        get_instructions_with_operands(12, 12).iter().for_each(|(o, r)| {
+            assert_eq!(o.get_operand(), *r);
+        });
     }
 
     #[test]
     fn test_get_operand_out_range() {
-        assert_eq!(BabyInstruction::Jump(33).get_operand(), 1);
-        assert_eq!(BabyInstruction::RelativeJump(33).get_operand(), 1);
-        assert_eq!(BabyInstruction::Negate(33).get_operand(), 1);
-        assert_eq!(BabyInstruction::Store(33).get_operand(), 1);
-        assert_eq!(BabyInstruction::Subtract(33).get_operand(), 1);
-
-        assert_eq!(BabyInstruction::SkipNextIfNegative.get_operand(), 0);
-        assert_eq!(BabyInstruction::Stop.get_operand(), 0);
-        assert_eq!(BabyInstruction::AbsoluteValue(5).get_operand(), 0);
+        get_instructions_with_operands(33, 1).iter().for_each(|(o, r)| {
+            assert_eq!(o.get_operand(), *r);
+        });
     }
 }

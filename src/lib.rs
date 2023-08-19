@@ -19,12 +19,12 @@
 //! ## Installation 
 //! 
 //! Command line:
-//! ```
+//! ```text
 //! cargo add baby-emulator
 //! ```
 //! 
 //! Cargo.toml:
-//! ```
+//! ```text
 //! baby-emulator = "0.1.3"
 //! ```
 //! 
@@ -38,7 +38,7 @@
 //! 
 //! ```
 //! use baby_emulator::core::BabyModel;
-//! use baby_emulator::errors::{BabyError, BabyErrors};
+//! use baby_emulator::core::errors::{BabyError, BabyErrors};
 //! 
 //! 
 //! fn main() {
@@ -86,14 +86,14 @@
 //! 
 //! ```rust
 //! use baby_emulator::core::{BabyModel, instructions::BabyInstruction};
-//! use baby_emulator::errors::{BabyError, BabyErrors};
+//! use baby_emulator::core::errors::{BabyError, BabyErrors};
 //! 
 //! let instrs = vec![
-//!     (BabyInstruction::Negate, 5),
-//!     (BabyInstruction::Subtract, 5),
-//!     (BabyInstruction::Store, 6),
-//!     (BabyInstruction::Negate, 6),
-//!     (BabyInstruction::Stop, 0)
+//!     BabyInstruction::Negate(5),
+//!     BabyInstruction::Subtract(5),
+//!     BabyInstruction::Store(6),
+//!     BabyInstruction::Negate(6),
+//!     BabyInstruction::Stop
 //! ];
 //! let mut main_store = BabyInstruction::to_numbers(instrs);
 //! main_store[5] = 5; // Initialise with data. 
@@ -125,7 +125,22 @@
 //! 
 //! 
 //! To carry on from the above example: 
-//! ```rust
+//! ```
+//! use baby_emulator::core::{BabyModel, instructions::BabyInstruction};
+//! use baby_emulator::core::errors::{BabyError, BabyErrors};
+//! 
+//! let instrs = vec![
+//!     BabyInstruction::Negate(5),
+//!     BabyInstruction::Subtract(5),
+//!     BabyInstruction::Store(6),
+//!     BabyInstruction::Negate(6),
+//!     BabyInstruction::Stop
+//! ];
+//! let mut main_store = BabyInstruction::to_numbers(instrs);
+//! main_store[5] = 5; // Initialise with data. 
+//! 
+//! let model = BabyModel::new_with_program(main_store);
+//! 
 //! // We will store the state of the model when the last instruction is executed for debug purposes 
 //! let mut last_model = BabyModel::new();
 //! 

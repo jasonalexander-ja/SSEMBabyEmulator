@@ -68,7 +68,7 @@ impl BabyError for BabyErrors {
 /// # Example 
 /// ```
 /// use baby_emulator::core::BabyModel;
-/// use baby_emulator::errors::BabyError;
+/// use baby_emulator::core::errors::BabyError;
 /// 
 /// let mut model = BabyModel::new_example_program();
 /// loop {

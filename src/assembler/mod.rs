@@ -41,7 +41,7 @@
 //! ";
 //!
 //! fn main() {
-//!     let instructions = match assemble(asm, false) {
+//!     let instructions = match assemble(&String::from(ASM), false) {
 //!         Ok(v) => v,
 //!         Err(e) => { println!("{}", e.describe()); return; }
 //!     };

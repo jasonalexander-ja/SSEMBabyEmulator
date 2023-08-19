@@ -21,6 +21,8 @@
 //! ```
 //! use baby_emulator::assembler::parser;
 //! use baby_emulator::assembler::linker;
+//! use baby_emulator::assembler::errors::AssemblyError;
+//! use baby_emulator::core::instructions::BabyInstruction;
 //! 
 //! 
 //! pub fn assemble(asm: &String) -> Result<Vec<BabyInstruction>, AssemblyError> {

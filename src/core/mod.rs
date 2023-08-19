@@ -72,7 +72,7 @@
 //! 
 //! ```
 //! use baby_emulator::core::BabyModel;
-//! use baby_emulator::errors::BabyError;
+//! use baby_emulator::core::errors::BabyError;
 //! 
 //! let model = BabyModel::new_example_program();
 //! match model.execute() {
@@ -127,7 +127,7 @@ pub const MEMORY_WORDS: usize = 32;
 /// # Example
 /// ```
 /// use baby_emulator::core::BabyModel;
-/// use baby_emulator::errors::BabyError;
+/// use baby_emulator::core::errors::BabyError;
 /// 
 /// let model = BabyModel::new();
 /// match model.execute() {
