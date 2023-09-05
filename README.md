@@ -5,7 +5,7 @@
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
 This library provides a collections of types and methods for emulating & assembling code for 
-the [Machester Baby](https://www.scienceandindustrymuseum.org.uk/objects-and-stories/baby-and-modern-computing), the first program stored 
+the [Manchester Baby](https://www.scienceandindustrymuseum.org.uk/objects-and-stories/baby-and-modern-computing), the first program stored 
 computer. 
 
 ## Explaination
@@ -13,14 +13,14 @@ computer.
 The Manchester "Baby" was the first computer to store both its program
 code and data in a common randomly-accessible memory, it is for this 
 reason the Baby is considered the first machine to run "true" software, 
-providing a familiar (abeit, primitive) programming environment to anyone 
-familiar with assembly, this library can be included  in a variety of 
+providing a familiar (albeit primitive) programming environment to anyone 
+familiar with assembly, this library can be included in a variety of 
 software and platforms allowing emulation functionality of this historic machine. 
 
 This library provides an interface for emulating the Baby as a bytecode 
 interpreter (`baby_emulator::core`), and also a library for assembling 
 asm using both modern and original asm notations into a format that 
-can be ran by the emulator (`baby_emulator::assmebler`). 
+can be ran by the emulator (`baby_emulator::assembler`). 
 
 Please log any questions or issues to the [GitHub repo](https://github.com/jasonalexander-ja/SSEMBabyEmulator).
 
@@ -67,7 +67,7 @@ match model.run_loop(100) {
 }
 ```
 
-You can also single set through an emulation, executing a single 
+You can also single step through an emulation, executing a single 
 instruction at a time using the `execute` method and seeing the 
 direct result. 
 
@@ -85,7 +85,7 @@ match model.execute() {
 ### Assembly
 
 Here is an example of assembling a Baby asm string using 
-modern notation, then running the resultant program,
+modern notation, then running the resultant program;
 see the `baby_emulator::assembler` docs for more information:
 
 ```rust
