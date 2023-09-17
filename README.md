@@ -1,16 +1,16 @@
-# Manchester Small-Scale Experimental Machine "Baby" Emulator Library
+# Manchester Small-Scale Experimental Machine "Baby" Emulator Library 
 
 [![crates.io](https://img.shields.io/crates/v/baby-emulator)](https://crates.io/crates/baby-emulator)
 [![Released API docs](https://docs.rs/baby-emulator/badge.svg)](https://docs.rs/baby-emulator)
-[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENCE)
 
 This library provides a collections of types and methods for emulating & assembling code for 
 the [Manchester Baby](https://www.scienceandindustrymuseum.org.uk/objects-and-stories/baby-and-modern-computing), the first program stored 
 computer. 
 
-## Explaination
+## Explaination 
 
-The Manchester "Baby" was the first computer to store both its program
+The Manchester "Baby" was the first computer to store both its program 
 code and data in a common randomly-accessible memory, it is for this 
 reason the Baby is considered the first machine to run "true" software, 
 providing a familiar (albeit primitive) programming environment to anyone 
@@ -26,19 +26,20 @@ Please log any questions or issues to the [GitHub repo](https://github.com/jason
 
 ## Installation 
 
-Command line:
-```text
-cargo add baby-emulator
+Command line: 
+```text 
+cargo add baby-emulator 
 ```
 
-Cargo.toml:
-```text
-baby-emulator = "0.1.4"
-```
+Cargo.toml: 
+```text 
+baby-emulator = "0.1.5" 
+``` 
 
 ## Example 
 
-This shows a few short examples of what this library is capable of, designed to be a starting point allowing further experimentation by the "user". See
+This shows a few short examples of what this library is capable of, designed to be a 
+starting point allowing further experimentation by the "user". See
 the [docs](https://docs.rs/baby-emulator) for further examples and info. 
 
 ### Bytecode Interpreter Emulation
@@ -96,17 +97,20 @@ use baby_emulator::core::{BabyModel, instructions::BabyInstruction};
 const ASM: &str = 
 "
 ldn $start_value  ; Loads 10 into the accumulator 
-  
-:loop_start
+
+:loop_start_value ; The memory address the loop should return to 
 sub $subtract_val ; Subtract 1 from the accumulator 
 cmp               ; Skip the next jump instruction if the accumulator is negative 
 jmp $loop_start   ; Jump to the start of the loop 
 stp               ; Program stops when the accumulator is negative 
-  
+
+:loop_start       ; Pointer to the memory address the loop should return to 
+abs $loop_start_value
+
 :subtract_val     ; Value to be subtracted
 abs 0d1
-  
-:start_value ; Value to start in the accumulator 
+
+:start_value      ; Value to start in the accumulator 
 abs 0d-10
 ";
 

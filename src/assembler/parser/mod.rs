@@ -320,11 +320,20 @@ pub enum LineType {
 /// index of the line it was found on. 
 /// 
 pub fn parse_asm_string(asm: &String, og_notation: bool) -> Result<Vec<LineType>, (usize, LineParseError)> {
-    let lines: Vec<String> = asm.lines()
-        .map(strip_comments)
-        .filter(|l| !l.is_empty())
-        .collect();
+    let lines: Vec<String> = split_filter_lines(asm);
     parse_lines(lines, og_notation)
+}
+
+/// Splits an asm string into lines, removeing comments and blank lines 
+/// returning only parsable expressions (I.E. instructions and tags). 
+/// 
+/// Returns each parsable expression as a string in a vector. 
+pub fn split_filter_lines(asm: &String) -> Vec<String> {
+    asm.lines()
+        .map(strip_comments)
+        .map(|l| l.trim().to_owned())
+        .filter(|l| !l.is_empty())
+        .collect()
 }
 
 /// Tries to parse a vector of lines of Baby asm 
@@ -360,13 +369,13 @@ pub fn parse_lines(lines: Vec<String>, og_notation: bool) -> Result<Vec<LineType
 /// encountered, containing metatdata on the error encountered.  
 /// 
 pub fn parse_line(line: &String, og_notation: bool) -> Result<LineType, LineParseError> {
-    let line = line.trim().to_lowercase();
+    let line = line.trim();
     let line = strip_comments(&line);
     match line {
         l if l.starts_with(":") => parse_tag(l.replace(":", "")),
         l if l.starts_with("abs ") => parse_absolute(l.replace("abs ", "")),
-        l => if og_notation { parse_instruction(l) } 
-            else { parse_instruction_ogn(l) },
+        l => if og_notation { parse_instruction_ogn(l) } 
+            else { parse_instruction(l) },
     }
 }
 
