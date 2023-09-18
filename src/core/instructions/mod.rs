@@ -55,7 +55,7 @@ impl BabyInstruction {
             BabyInstruction::Store(_) => "store instruction".to_owned(),
             BabyInstruction::Subtract(_) => "subtract instruction".to_owned(),
             BabyInstruction::SkipNextIfNegative => "skip next if negative instruction".to_owned(),
-            BabyInstruction::Stop => "jump instruction".to_owned(),
+            BabyInstruction::Stop => "stop instruction".to_owned(),
             BabyInstruction::AbsoluteValue(v) => format!("absolute value {}", v) 
         }
     }
