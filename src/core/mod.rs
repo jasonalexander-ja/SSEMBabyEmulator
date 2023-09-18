@@ -495,7 +495,12 @@ impl BabyModel {
     /// }
     /// ```
     pub fn core_dump(&self) -> String {
-        let mut res = format!("Accumulator: {:#010x}; Instruction Register: {:#06x};\n", self.accumulator, self.instruction);
+        let instr_desc = BabyInstruction::from_number(self.instruction).get_instr_description();
+        let operand_addr = BabyInstruction::from_number(self.instruction).get_operand();
+        let operand = self.main_store[operand_addr];
+        let mut res = format!("Accumulator: {:#010x}; Instruction Register: {:#06x} ({} - {});\n", 
+            self.accumulator, self.instruction, instr_desc, operand
+        );
         res += &format!("Instruction Address: {:#06x}; Main Store: \n", self.instruction_address);
         
         for i in 0..(MEMORY_WORDS / 4) {
@@ -504,9 +509,9 @@ impl BabyModel {
                 let addr = i2 + offset;
                 res += &format!("{:#04x}: {:#010x}; ", addr, self.main_store[addr]);
             }
-            res += "\n";
+            res += if i == (MEMORY_WORDS / 4) - 1 { "" }
+                else { "\n" };
         }
-        res += "\n";
         return res;
     }
 }
