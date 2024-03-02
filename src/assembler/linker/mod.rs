@@ -49,22 +49,30 @@ pub mod errors;
 #[cfg(test)]
 mod tests;
 
+/// Helper type, just a tuple with a vector of [BabyInstruction] - the linked program,
+/// and a [HashMap<String, i32>] - the tag values. 
+/// 
+/// This is all the data returned from a sucessful linking. 
+pub struct LinkerData(Vec<BabyInstruction>, HashMap<String, i32>);
+
 /// Links the parsed lines into the corresponding machine code. 
 /// 
 /// Determines the values for all the tags and resolves any refernces 
 /// to the tags to the determines value. 
 /// 
 /// If the all the contained value expressions can be resolved without error it will
-/// return an [Ok] with a vector of each instruction [BabyInstruction]. 
+/// return an [Ok] with a [LinkerData]. 
 /// 
 /// Returns a [LinkingError] if an error is encountered resolving the values. 
-pub fn link_parsed_lines(lines: Vec<LineType>) -> Result<Vec<BabyInstruction>, LinkingError> {
+pub fn link_parsed_lines(lines: Vec<LineType>) -> Result<LinkerData, LinkingError> {
     let inlined_tags = inline_tags(lines);
     let tag_values = position_tags(&inlined_tags);
     let preprocessed_lines: Vec<UnlinkedData> = inlined_tags.iter()
         .map(|(_, t)| t.clone())
         .collect();
-    link_tags(preprocessed_lines, tag_values)
+    let processed_lines = link_tags(preprocessed_lines, &tag_values)
+        .map_err(|e| e)?;
+    Ok(LinkerData(processed_lines, tag_values))
 }
 
 /// Takes a list of unlinked values and a collection of tag names and values, 
@@ -83,7 +91,7 @@ pub fn link_parsed_lines(lines: Vec<LineType>) -> Result<Vec<BabyInstruction>, L
 /// * `preprocessed_lines` - The unlinked data. 
 /// * `tag_values` - The tag names and corresponding values. 
 /// 
-fn link_tags(preprocessed_lines: Vec<UnlinkedData>, tag_values: HashMap<String, i32>) -> 
+fn link_tags(preprocessed_lines: Vec<UnlinkedData>, tag_values: &HashMap<String, i32>) -> 
     Result<Vec<BabyInstruction>, LinkingError> {
     let mut instructions: Vec<BabyInstruction> = vec![];
 
@@ -92,7 +100,7 @@ fn link_tags(preprocessed_lines: Vec<UnlinkedData>, tag_values: HashMap<String, 
      }
 
     for line in preprocessed_lines {
-        let val = match line.resolve(&tag_values) {
+        let val = match line.resolve(tag_values) {
             Ok(v) => v,
             Err(e) => return Err(LinkingError::TagError(e))
         };

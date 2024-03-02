@@ -182,8 +182,8 @@
 //! ```
 //! 
 
-use crate::core::instructions::BabyInstruction;
 use errors::AssemblyError;
+use linker::LinkerData;
 
 
 /// Contains types and functionality for parsing Baby asm. 
@@ -194,13 +194,14 @@ pub mod linker;
 /// assembling process. 
 pub mod errors;
 
-/// Assembles a string of Baby asm to a vector of [BabyInstruction] machine code instructions. 
+/// Assembles a string of Baby asm to a [LinkerData]. 
+/// 
+/// This type is a tuple of a vector of [BabyInstruction] - the assembled program,
+/// and [HashMap<String, i32>] - the values of all the tags. 
 /// 
 /// Can assemble for both modern and original notation depending on `og_notation`. 
 /// 
-/// If sucessful it will return a vector of [BabyInstruction]. 
-/// 
-/// This type can be fed straight into [BabyInstruction::to_numbers] to return an
+/// The [Vec<BabyInstruction>] can be fed straight into [BabyInstruction::to_numbers] to return an
 /// array of [i32] that can be used to directly instantiate [BabyModel][crate::core::BabyModel]
 /// via [BabyModel::new_with_program][crate::core::BabyModel::new_with_program] and 
 /// run the assembled program.
@@ -214,7 +215,7 @@ pub mod errors;
 /// * `asm` - The assembly string. 
 /// * `og_notation` - If true, will use original notation. 
 /// 
-pub fn assemble(asm: &String, og_notation: bool) -> Result<Vec<BabyInstruction>, AssemblyError> {
+pub fn assemble(asm: &String, og_notation: bool) -> Result<LinkerData, AssemblyError> {
     let parse_result = match parser::parse_asm_string(asm, og_notation) {
         Ok(v) => v,
         Err((l, e)) => return Err(AssemblyError::ParserError(l, e))
