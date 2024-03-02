@@ -9,7 +9,7 @@ fn get_operation_desc() -> Vec<(BabyInstruction, String)> {
         (BabyInstruction::Store(0), "store instruction".to_owned()),
         (BabyInstruction::Subtract(0), "subtract instruction".to_owned()),
         (BabyInstruction::SkipNextIfNegative, "skip next if negative instruction".to_owned()),
-        (BabyInstruction::Stop, "jump instruction".to_owned()),
+        (BabyInstruction::Stop, "stop instruction".to_owned()),
         (BabyInstruction::AbsoluteValue(5), format!("absolute value 5"))
     ]
 }

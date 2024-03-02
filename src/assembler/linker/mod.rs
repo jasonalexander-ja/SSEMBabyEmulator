@@ -20,7 +20,7 @@
 //! 
 //! # Example
 //! ```
-//! use baby_emulator::assembler::{parser, linker, errors::AssemblyError};
+//! use baby_emulator::assembler::{parser, linker, linker::LinkerData, errors::AssemblyError};
 //! use baby_emulator::core::instructions::BabyInstruction;
 //! 
 //! 
@@ -30,7 +30,7 @@
 //!         Err((l, e)) => return Err(AssemblyError::ParserError(l, e))
 //!     };
 //!     match linker::link_parsed_lines(parse_result) {
-//!         Ok(v) => Ok(v),
+//!         Ok(LinkerData(v, _)) => Ok(v),
 //!         Err(e) => Err(AssemblyError::LinkerError(e))
 //!     }
 //! }
@@ -53,7 +53,7 @@ mod tests;
 /// and a [HashMap<String, i32>] - the tag values. 
 /// 
 /// This is all the data returned from a sucessful linking. 
-pub struct LinkerData(Vec<BabyInstruction>, HashMap<String, i32>);
+pub struct LinkerData(pub Vec<BabyInstruction>, pub HashMap<String, i32>);
 
 /// Links the parsed lines into the corresponding machine code. 
 /// 

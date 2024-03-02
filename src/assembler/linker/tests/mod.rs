@@ -48,7 +48,7 @@ fn test_link_tags_correct() {
         UnlinkedData::Instruction(Instruction::Jump(Value::Tag("foo".to_owned()))),
         UnlinkedData::Instruction(Instruction::Jump(Value::Value(5))),
     ];
-    match link_tags(lines, tags) {
+    match link_tags(lines, &tags) {
         Ok(res) => {
             assert_eq!(res.len(), 2);
             assert_eq!(res[0], BabyInstruction::Jump(5));
@@ -65,7 +65,7 @@ fn test_link_tags_fail() {
         UnlinkedData::Instruction(Instruction::Jump(Value::Tag("bar".to_owned()))),
         UnlinkedData::Instruction(Instruction::Jump(Value::Value(5))),
     ];
-    match link_tags(lines, tags) {
+    match link_tags(lines, &tags) {
         Err(e) => {
             assert_eq!(e, LinkingError::TagError(TagError::UnknownTagName("bar".to_owned())))
         },
@@ -77,7 +77,7 @@ fn test_link_tags_fail() {
 fn test_link_tags_beyond() {
     let tags: HashMap<String, i32> = HashMap::from([("foo".to_owned(), 5)]);
     let lines: Vec<UnlinkedData> = vec![UnlinkedData::Instruction(Instruction::Jump(Value::Value(5))); 33];
-    match link_tags(lines, tags) {
+    match link_tags(lines, &tags) {
         Err(e) => {
             assert_eq!(e, LinkingError::MemoryExceedingError(MemoryExceedingError { linked_size: 33 }))
         },
@@ -93,15 +93,14 @@ fn test_link_parsed_lines_correct() {
         LineType::Instruction(Instruction::Jump(Value::Tag("start".to_owned()))),
         LineType::Absolute(Value::Value(5)),
     ];
-    match link_parsed_lines(lines) {
-        Ok(v) => {
-            assert_eq!(v.len(), 3);
-            assert_eq!(v[0], BabyInstruction::Negate(2));
-            assert_eq!(v[1], BabyInstruction::Jump(0));
-            assert_eq!(v[2], BabyInstruction::AbsoluteValue(5));
-        },
-        Err(_) => assert!(false),
-    }
+    let parsed_lines = match link_parsed_lines(lines) {
+        Ok(LinkerData(v, _)) => v,
+        Err(_) => panic!("Failed to parse correct lines. ")
+    };
+    assert_eq!(parsed_lines.len(), 3);
+    assert_eq!(parsed_lines[0], BabyInstruction::Negate(2));
+    assert_eq!(parsed_lines[1], BabyInstruction::Jump(0));
+    assert_eq!(parsed_lines[2], BabyInstruction::AbsoluteValue(5));
 }
 
 #[test]

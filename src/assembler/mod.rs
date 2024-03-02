@@ -19,7 +19,7 @@
 //! in [core][crate::core] module.  
 //! 
 //! ```
-//! use baby_emulator::assembler::assemble; 
+//! use baby_emulator::assembler::{assemble, linker::LinkerData}; 
 //! use baby_emulator::core::{BabyModel, instructions::BabyInstruction};
 //! 
 //! 
@@ -45,7 +45,7 @@
 //!
 //! fn main() {
 //!     let instructions = match assemble(&String::from(ASM), false) {
-//!         Ok(v) => v,
+//!         Ok(LinkerData(v, _)) => v,
 //!         Err(e) => { println!("{}", e.describe(true)); return; }
 //!     };
 //!     let main_store = BabyInstruction::to_numbers(instructions);
