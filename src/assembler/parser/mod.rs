@@ -17,7 +17,7 @@
 //! # Example
 //! ```
 //! use baby_emulator::assembler::parser;
-//! use baby_emulator::assembler::linker;
+//! use baby_emulator::assembler::{linker, linker::LinkerData};
 //! use baby_emulator::assembler::errors::AssemblyError;
 //! use baby_emulator::core::instructions::BabyInstruction;
 //! 
@@ -27,7 +27,7 @@
 //!         Err((l, e)) => return Err(AssemblyError::ParserError(l, e))
 //!     };
 //!     match linker::link_parsed_lines(parse_result) {
-//!         Ok(v) => Ok(v),
+//!         Ok(LinkerData(v, _)) => Ok(v),
 //!         Err(e) => Err(AssemblyError::LinkerError(e))
 //!     }
 //! }

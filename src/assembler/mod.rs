@@ -19,7 +19,7 @@
 //! in [core][crate::core] module.  
 //! 
 //! ```
-//! use baby_emulator::assembler::assemble; 
+//! use baby_emulator::assembler::{assemble, linker::LinkerData}; 
 //! use baby_emulator::core::{BabyModel, instructions::BabyInstruction};
 //! 
 //! 
@@ -45,7 +45,7 @@
 //!
 //! fn main() {
 //!     let instructions = match assemble(&String::from(ASM), false) {
-//!         Ok(v) => v,
+//!         Ok(LinkerData(v, _)) => v,
 //!         Err(e) => { println!("{}", e.describe(true)); return; }
 //!     };
 //!     let main_store = BabyInstruction::to_numbers(instructions);
@@ -196,12 +196,13 @@ pub mod errors;
 
 /// Assembles a string of Baby asm to a [LinkerData]. 
 /// 
-/// This type is a tuple of a vector of [BabyInstruction] - the assembled program,
-/// and [HashMap<String, i32>] - the values of all the tags. 
+/// This type is a tuple of a vector of [BabyInstruction][crate::core::instructions::BabyInstruction] - the assembled program,
+/// and [HashMap<String, i32>][std::collections::HashMap<String, i32>] - the values of all the tags. 
 /// 
 /// Can assemble for both modern and original notation depending on `og_notation`. 
 /// 
-/// The [Vec<BabyInstruction>] can be fed straight into [BabyInstruction::to_numbers] to return an
+/// The [`Vec<BabyInstruction>`][std::vec::Vec<crate::core::instructions::BabyInstruction>] can be fed straight into 
+/// [BabyInstruction::to_numbers][crate::core::instructions::BabyInstruction::to_numbers] to return an
 /// array of [i32] that can be used to directly instantiate [BabyModel][crate::core::BabyModel]
 /// via [BabyModel::new_with_program][crate::core::BabyModel::new_with_program] and 
 /// run the assembled program.
