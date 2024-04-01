@@ -103,7 +103,7 @@
 //! ```
 //! 
 
-use std::ops::Neg;
+use core::ops::Neg;
 use errors::{Stop, BabyErrors, IterationsExceeded};
 use instructions::BabyInstruction;
 

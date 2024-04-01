@@ -134,8 +134,8 @@
 //! ```
 //! 
 
-
 /// Contains the core models and emulation functionality. 
 pub mod core;
 /// Contains types and functionality for assembling Baby asm. 
+#[cfg(not(target_os="none"))]
 pub mod assembler;

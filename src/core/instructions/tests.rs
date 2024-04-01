@@ -1,16 +1,16 @@
 use super::*;
 
 
-fn get_operation_desc() -> Vec<(BabyInstruction, String)> {
+fn get_operation_desc() -> Vec<(BabyInstruction, &'static str)> {
     vec![
-        (BabyInstruction::Jump(0), "jump instruction".to_owned()),
-        (BabyInstruction::RelativeJump(0), "relative jump instruction".to_owned()),
-        (BabyInstruction::Negate(0), "negate instruction".to_owned()),
-        (BabyInstruction::Store(0), "store instruction".to_owned()),
-        (BabyInstruction::Subtract(0), "subtract instruction".to_owned()),
-        (BabyInstruction::SkipNextIfNegative, "skip next if negative instruction".to_owned()),
-        (BabyInstruction::Stop, "stop instruction".to_owned()),
-        (BabyInstruction::AbsoluteValue(5), format!("absolute value 5"))
+        (BabyInstruction::Jump(0), "jump instruction"),
+        (BabyInstruction::RelativeJump(0), "relative jump instruction"),
+        (BabyInstruction::Negate(0), "negate instruction"),
+        (BabyInstruction::Store(0), "store instruction"),
+        (BabyInstruction::Subtract(0), "subtract instruction"),
+        (BabyInstruction::SkipNextIfNegative, "skip next if negative instruction"),
+        (BabyInstruction::Stop, "stop instruction"),
+        (BabyInstruction::AbsoluteValue(5), "absolute value")
     ]
 }
 

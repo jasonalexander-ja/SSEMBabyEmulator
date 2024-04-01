@@ -10,7 +10,7 @@
 //! an array that can be used to instantiate a new baby model with 
 //! a program loaded into the stack. 
 
-use crate::core::MEMORY_WORDS;
+use super::MEMORY_WORDS;
 
 
 #[cfg(test)]
@@ -47,16 +47,16 @@ pub enum BabyInstruction {
 
 impl BabyInstruction {
     /// Gets a short description of the instruction. 
-    pub fn get_instr_description(&self) -> String {
+    pub fn get_instr_description(&self) -> &'static str {
         match self {
-            BabyInstruction::Jump(_) => "jump instruction".to_owned(),
-            BabyInstruction::RelativeJump(_) => "relative jump instruction".to_owned(),
-            BabyInstruction::Negate(_) => "negate instruction".to_owned(),
-            BabyInstruction::Store(_) => "store instruction".to_owned(),
-            BabyInstruction::Subtract(_) => "subtract instruction".to_owned(),
-            BabyInstruction::SkipNextIfNegative => "skip next if negative instruction".to_owned(),
-            BabyInstruction::Stop => "stop instruction".to_owned(),
-            BabyInstruction::AbsoluteValue(v) => format!("absolute value {}", v) 
+            BabyInstruction::Jump(_) => "jump instruction",
+            BabyInstruction::RelativeJump(_) => "relative jump instruction",
+            BabyInstruction::Negate(_) => "negate instruction",
+            BabyInstruction::Store(_) => "store instruction",
+            BabyInstruction::Subtract(_) => "subtract instruction",
+            BabyInstruction::SkipNextIfNegative => "skip next if negative instruction",
+            BabyInstruction::Stop => "stop instruction",
+            BabyInstruction::AbsoluteValue(_) => "absolute value"
         }
     }
     
