@@ -133,6 +133,8 @@
 //! }
 //! ```
 //! 
+#![cfg(target_os="none")]
+#![no_std]
 
 /// Contains the core models and emulation functionality. 
 pub mod core;
