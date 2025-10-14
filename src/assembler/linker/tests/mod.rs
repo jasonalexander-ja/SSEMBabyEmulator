@@ -43,7 +43,7 @@ fn test_position_tags() {
 
 #[test]
 fn test_link_tags_correct() {
-    let tags: HashMap<String, i32> = HashMap::from([("foo".to_owned(), 5)]);
+    let tags: HashMap<String, WORD> = HashMap::from([("foo".to_owned(), 5)]);
     let lines: Vec<UnlinkedData> = vec![
         UnlinkedData::Instruction(Instruction::Jump(Value::Tag("foo".to_owned()))),
         UnlinkedData::Instruction(Instruction::Jump(Value::Value(5))),
@@ -60,7 +60,7 @@ fn test_link_tags_correct() {
 
 #[test]
 fn test_link_tags_fail() {
-    let tags: HashMap<String, i32> = HashMap::from([("foo".to_owned(), 5)]);
+    let tags: HashMap<String, WORD> = HashMap::from([("foo".to_owned(), 5)]);
     let lines: Vec<UnlinkedData> = vec![
         UnlinkedData::Instruction(Instruction::Jump(Value::Tag("bar".to_owned()))),
         UnlinkedData::Instruction(Instruction::Jump(Value::Value(5))),
@@ -75,7 +75,7 @@ fn test_link_tags_fail() {
 
 #[test]
 fn test_link_tags_beyond() {
-    let tags: HashMap<String, i32> = HashMap::from([("foo".to_owned(), 5)]);
+    let tags: HashMap<String, WORD> = HashMap::from([("foo".to_owned(), 5)]);
     let lines: Vec<UnlinkedData> = vec![UnlinkedData::Instruction(Instruction::Jump(Value::Value(5))); 33];
     match link_tags(lines, &tags) {
         Err(e) => {

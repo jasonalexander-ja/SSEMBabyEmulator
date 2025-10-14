@@ -39,7 +39,7 @@
 
 use std::collections::HashMap;
 use std::convert::identity;
-use crate::core::{MEMORY_WORDS, instructions::BabyInstruction};
+use crate::core::{instructions::BabyInstruction, MEMORY_WORDS, WORD};
 use super::parser::{LineType, Value, Instruction};
 use errors::{LinkingError, TagError, MemoryExceedingError};
 
@@ -50,10 +50,10 @@ pub mod errors;
 mod tests;
 
 /// Helper type, just a tuple with a vector of [BabyInstruction] - the linked program,
-/// and a [HashMap<String, i32>] - the tag values. 
+/// and a [HashMap<String, WORD>] - the tag values. 
 /// 
 /// This is all the data returned from a sucessful linking. 
-pub struct LinkerData(pub Vec<BabyInstruction>, pub HashMap<String, i32>);
+pub struct LinkerData(pub Vec<BabyInstruction>, pub HashMap<String, WORD>);
 
 /// Links the parsed lines into the corresponding machine code. 
 /// 
@@ -91,7 +91,7 @@ pub fn link_parsed_lines(lines: Vec<LineType>) -> Result<LinkerData, LinkingErro
 /// * `preprocessed_lines` - The unlinked data. 
 /// * `tag_values` - The tag names and corresponding values. 
 /// 
-fn link_tags(preprocessed_lines: Vec<UnlinkedData>, tag_values: &HashMap<String, i32>) -> 
+fn link_tags(preprocessed_lines: Vec<UnlinkedData>, tag_values: &HashMap<String, WORD>) -> 
     Result<Vec<BabyInstruction>, LinkingError> {
     let mut instructions: Vec<BabyInstruction> = vec![];
 
@@ -129,9 +129,9 @@ fn link_tags(preprocessed_lines: Vec<UnlinkedData>, tag_values: &HashMap<String,
 /// assert_eq!(tags.get("foo"), Some(&0));
 /// ```
 /// 
-pub fn position_tags(lines: &Vec<(Option<String>, UnlinkedData)>) -> HashMap<String, i32> {
+pub fn position_tags(lines: &Vec<(Option<String>, UnlinkedData)>) -> HashMap<String, WORD> {
     lines.iter().enumerate().filter_map(|(i, (t, _))| match t {
-        Some(v) => Some((v.clone(), i as i32)),
+        Some(v) => Some((v.clone(), i as WORD)),
         None => None
     }).collect()
 }
@@ -215,7 +215,7 @@ impl UnlinkedData {
     /// 
     /// * `tags` - A hashmap pf tag names and corresponding values. 
     /// 
-    pub fn resolve(&self, tags: &HashMap<String, i32>) -> Result<BabyInstruction, TagError> {
+    pub fn resolve(&self, tags: &HashMap<String, WORD>) -> Result<BabyInstruction, TagError> {
         match self {
             UnlinkedData::Absolute(v) => Self::resolve_absolute_value(v, tags),
             UnlinkedData::Instruction(c) => Self::resolve_instruction(c, tags)
@@ -235,7 +235,7 @@ impl UnlinkedData {
     /// * `instr` - The instruction to be resolved. 
     /// * `tags` - A collection of tag names and values to be looked up. 
     /// 
-    pub fn resolve_instruction(instr: &Instruction, tags: &HashMap<String, i32>) -> Result<BabyInstruction, TagError> {
+    pub fn resolve_instruction(instr: &Instruction, tags: &HashMap<String, WORD>) -> Result<BabyInstruction, TagError> {
         let val = match Self::resolve_value(&instr.get_operand(), tags) {
             Ok(v) => v,
             Err(v) => return Err(TagError::UnknownTagName(v))
@@ -261,7 +261,7 @@ impl UnlinkedData {
     /// * `val` - The value to be resolved. 
     /// * `tags` - A collection of tag names and values to be looked up. 
     /// 
-    pub fn resolve_absolute_value(val: &Value, tags: &HashMap<String, i32>) -> Result<BabyInstruction, TagError> {
+    pub fn resolve_absolute_value(val: &Value, tags: &HashMap<String, WORD>) -> Result<BabyInstruction, TagError> {
         match Self::resolve_value(val, tags) {
             Ok(v) => Ok(BabyInstruction::AbsoluteValue(v)),
             Err(v) => Err(TagError::UnknownTagName(v))
@@ -274,7 +274,7 @@ impl UnlinkedData {
     /// the inner concrete value, if it's a tag reference, it will try to lookup the 
     /// tag value in the supplied hashmap, returning the tag name if it can't be 
     /// found. 
-    pub fn resolve_value(val: &Value, tags: &HashMap<String, i32>) -> Result<i32, String> {
+    pub fn resolve_value(val: &Value, tags: &HashMap<String, WORD>) -> Result<WORD, String> {
         match val {
             Value::Tag(tag) => Self::get_tag(tag, tags),
             Value::Value(v) => return Ok(*v),
@@ -283,7 +283,7 @@ impl UnlinkedData {
 
     /// Helper function Tries to get a tag's value from a collection 
     /// of tags returns the tag name if it can't be found. 
-    pub fn get_tag(tag: &str, tags: &HashMap<String, i32>) -> Result<i32, String> {
+    pub fn get_tag(tag: &str, tags: &HashMap<String, WORD>) -> Result<WORD, String> {
         match tags.get(tag).cloned() {
             Some(v) => Ok(v),
             None => Err(tag.to_owned())

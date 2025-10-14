@@ -16,25 +16,25 @@ fn get_operation_desc() -> Vec<(BabyInstruction, String)> {
 
 fn get_number_to_instruction() -> Vec<(u16, BabyInstruction)> {
     vec![
-        (0b0000_0000_0000_0101, BabyInstruction::Jump(5)),
-        (0b1000_0000_0000_0101, BabyInstruction::RelativeJump(5)),
-        (0b0100_0000_0000_0101, BabyInstruction::Negate(5)),
-        (0b1100_0000_0000_0101, BabyInstruction::Store(5)),
-        (0b0010_0000_0000_0101, BabyInstruction::Subtract(5)),
-        (0b1010_0000_0000_0101, BabyInstruction::Subtract(5)),
-        (0b0110_0000_0000_0000, BabyInstruction::SkipNextIfNegative),
-        (0b1110_0000_0000_0000, BabyInstruction::Stop),
+        ((0b000 << (INSTR_LEN - 3)) + 0b101, BabyInstruction::Jump(5)),
+        ((0b100 << (INSTR_LEN - 3)) + 0b101, BabyInstruction::RelativeJump(5)),
+        ((0b010 << (INSTR_LEN - 3)) + 0b101, BabyInstruction::Negate(5)),
+        ((0b110 << (INSTR_LEN - 3)) + 0b101, BabyInstruction::Store(5)),
+        ((0b001 << (INSTR_LEN - 3)) + 0b101, BabyInstruction::Subtract(5)),
+        ((0b101 << (INSTR_LEN - 3)) + 0b101, BabyInstruction::Subtract(5)),
+        ((0b011 << (INSTR_LEN - 3)) + 0b000, BabyInstruction::SkipNextIfNegative),
+        ((0b111 << (INSTR_LEN - 3)) + 0b000, BabyInstruction::Stop),
     ]
 }
 
-fn get_instruction_to_no() -> Vec<(i32, BabyInstruction)> {
+fn get_instruction_to_no() -> Vec<(WORD, BabyInstruction)> {
     vec![
-        (0b0000_0000_0000_0101, BabyInstruction::Jump(5)),
-        (0b1000_0000_0000_0101, BabyInstruction::RelativeJump(5)),
-        (0b0100_0000_0000_0101, BabyInstruction::Negate(5)),
-        (0b1100_0000_0000_0101, BabyInstruction::Store(5)),
-        (0b0110_0000_0000_0000, BabyInstruction::SkipNextIfNegative),
-        (0b1110_0000_0000_0000, BabyInstruction::Stop),
+        ((0b000 << (INSTR_LEN - 3)) + 0b101, BabyInstruction::Jump(5)),
+        ((0b100 << (INSTR_LEN - 3)) + 0b101, BabyInstruction::RelativeJump(5)),
+        ((0b010 << (INSTR_LEN - 3)) + 0b101, BabyInstruction::Negate(5)),
+        ((0b110 << (INSTR_LEN - 3)) + 0b101, BabyInstruction::Store(5)),
+        ((0b011 << (INSTR_LEN - 3)) + 0b000, BabyInstruction::SkipNextIfNegative),
+        ((0b111 << (INSTR_LEN - 3)) + 0b000, BabyInstruction::Stop),
     ]
 }
 
@@ -71,8 +71,8 @@ fn test_to_number() {
         assert_eq!(i.to_number(), *n);
     });
     assert!(
-        BabyInstruction::Subtract(5).to_number() == 0b0010_0000_0000_0101 || 
-        BabyInstruction::Subtract(5).to_number() == 0b1010_0000_0000_0101
+        BabyInstruction::Subtract(5).to_number() == (0b001 << (INSTR_LEN - 3)) + 0b0101 || 
+        BabyInstruction::Subtract(5).to_number() == (0b101 << (INSTR_LEN - 3)) + 0b0101
     );
 }
 

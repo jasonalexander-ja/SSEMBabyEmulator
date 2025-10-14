@@ -27,14 +27,26 @@ Please log any questions or issues to the [GitHub repo](https://github.com/jason
 ## Installation 
 
 Command line: 
-```text 
+```bash 
 cargo add baby-emulator 
 ```
 
 Cargo.toml: 
-```text 
+```toml 
 baby-emulator = "0.2.0" 
 ``` 
+
+### Features 
+
+As of version 2.1, variable bit lengths are supported on both the simulator and assembler, 
+either `i32` as per the original Baby, `i16` and `i8`, available by importing the library 
+the correspondingly named feature. 
+
+```toml
+baby-emulator = { version = "0.2.1", features = ["i32"] }
+baby-emulator = { version = "0.2.1", features = ["i16"] }
+baby-emulator = { version = "0.2.1", features = ["i8"] }
+```
 
 ## Example 
 

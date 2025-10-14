@@ -3,7 +3,7 @@ use super::*;
 
 #[test]
 fn test_get_tag() {
-    let tags: HashMap<String, i32> = HashMap::from([("foo".to_owned(), 5)]);
+    let tags: HashMap<String, WORD> = HashMap::from([("foo".to_owned(), 5)]);
     match UnlinkedData::get_tag("foo", &tags) {
         Ok(v) => assert_eq!(v, 5),
         Err(_) => assert!(false)
@@ -16,7 +16,7 @@ fn test_get_tag() {
 
 #[test]
 fn test_resolve_value() {
-    let tags: HashMap<String, i32> = HashMap::from([("foo".to_owned(), 5)]);
+    let tags: HashMap<String, WORD> = HashMap::from([("foo".to_owned(), 5)]);
     match UnlinkedData::resolve_value(&Value::Value(5), &tags) {
         Ok(v) => assert_eq!(v, 5),
         Err(_) => assert!(false)
@@ -33,7 +33,7 @@ fn test_resolve_value() {
 
 #[test]
 fn test_resolve_absolute_value() {
-    let tags: HashMap<String, i32> = HashMap::from([("foo".to_owned(), 5)]);
+    let tags: HashMap<String, WORD> = HashMap::from([("foo".to_owned(), 5)]);
     match UnlinkedData::resolve_absolute_value(&Value::Value(5), &tags) {
         Ok(v) => assert_eq!(v, BabyInstruction::AbsoluteValue(5)),
         Err(_) => assert!(false)
@@ -48,7 +48,7 @@ fn test_resolve_absolute_value() {
     }
 }
 
-fn get_litteral_value_instruction(value: i32, result: u16) -> Vec<(Instruction, Result<BabyInstruction, TagError>)> {
+fn get_litteral_value_instruction(value: WORD, result: u16) -> Vec<(Instruction, Result<BabyInstruction, TagError>)> {
     vec![
         (Instruction::Jump(Value::Value(value)), Ok(BabyInstruction::Jump(result))),
         (Instruction::RelativeJump(Value::Value(value)), Ok(BabyInstruction::RelativeJump(result))),
@@ -82,7 +82,7 @@ fn get_tag_ref_instructions_err(value: &str, err: TagError) -> Vec<(Instruction,
 
 #[test]
 fn test_resolve_instruction() {
-    let tags: HashMap<String, i32> = HashMap::from([("foo".to_owned(), 5)]);
+    let tags: HashMap<String, WORD> = HashMap::from([("foo".to_owned(), 5)]);
 
     get_litteral_value_instruction(5, 5).iter().for_each(|(i, res)| {
         assert_eq!(UnlinkedData::resolve_instruction(i, &tags), *res);

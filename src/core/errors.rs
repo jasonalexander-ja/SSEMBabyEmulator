@@ -98,7 +98,7 @@ impl BabyError for Stop {
     }
 
     fn at(&self) -> u16 {
-        self.at
+        self.at as u16
     }
 }
 
@@ -142,10 +142,10 @@ impl BabyError for IterationsExceeded {
     }
     
     fn get_instruction(&self) -> BabyInstruction {
-        BabyInstruction::from_number(self.end_model.instruction)
+        BabyInstruction::from_number(self.end_model.instruction as u16)
     }
 
     fn at(&self) -> u16 {
-        self.end_model.instruction_address
+        self.end_model.instruction_address as u16
     }
 }

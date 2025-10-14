@@ -10,17 +10,17 @@ fn test_new_with_program() {
 #[test]
 fn test_new_example_program() {
     let model = BabyModel::new_example_program();
-    assert_eq!(model.instruction, 16389)
+    assert_eq!(model.instruction, (0b010 << (INSTR_LEN - 3)) + 5)
 }
 
 #[test]
 fn test_decode_instruction() {
-    let main_store: [i32; MEMORY_WORDS] = core::array::from_fn(|i| i as i32);
+    let main_store: [WORD; MEMORY_WORDS] = core::array::from_fn(|i| i as WORD);
     let model = BabyModel {
         main_store,
         accumulator: 0,
         instruction_address: 0,
-        instruction: 16383
+        instruction: (0b101 << (INSTR_LEN - 3)) + 31
     };
     let (value, instruction) = model.decode_instruction();
     assert_eq!(instruction, BabyInstruction::Subtract(31));
@@ -45,7 +45,7 @@ fn test_run_loop() {
 
 #[test]
 fn test_jump_in_range() {
-    let main_store: [i32; MEMORY_WORDS] = core::array::from_fn(|i| i as i32);
+    let main_store: [WORD; MEMORY_WORDS] = core::array::from_fn(|i| i as WORD);
     let model = BabyModel::new_with_program(main_store);
     let new_model = model.jump(5);
     assert_eq!(new_model.instruction, 5);
@@ -54,7 +54,7 @@ fn test_jump_in_range() {
 
 #[test]
 fn test_jump_in_range_dispatch() {
-    let main_store: [i32; MEMORY_WORDS] = core::array::from_fn(|i| i as i32);
+    let main_store: [WORD; MEMORY_WORDS] = core::array::from_fn(|i| i as WORD);
     let model = BabyModel::new_with_program(main_store);
     let new_model = model.dispatch_instruction(BabyInstruction::Jump(0), 5).unwrap();
     assert_eq!(new_model.instruction, 5);
@@ -63,7 +63,7 @@ fn test_jump_in_range_dispatch() {
 
 #[test]
 fn test_jump_out_range() {
-    let main_store: [i32; MEMORY_WORDS] = core::array::from_fn(|i| i as i32);
+    let main_store: [WORD; MEMORY_WORDS] = core::array::from_fn(|i| i as WORD);
     let model = BabyModel::new_with_program(main_store);
     let new_model = model.jump(32);
     assert_eq!(new_model.instruction, 0);
@@ -72,7 +72,7 @@ fn test_jump_out_range() {
 
 #[test]
 fn test_jump_out_range_dispatch() {
-    let main_store: [i32; MEMORY_WORDS] = core::array::from_fn(|i| i as i32);
+    let main_store: [WORD; MEMORY_WORDS] = core::array::from_fn(|i| i as WORD);
     let model = BabyModel::new_with_program(main_store);
     let new_model = model.dispatch_instruction(BabyInstruction::Jump(0), 32).unwrap();
     assert_eq!(new_model.instruction, 0);
@@ -81,7 +81,7 @@ fn test_jump_out_range_dispatch() {
 
 #[test]
 fn test_relative_jump_in_range() {
-    let main_store: [i32; MEMORY_WORDS] = core::array::from_fn(|i| i as i32);
+    let main_store: [WORD; MEMORY_WORDS] = core::array::from_fn(|i| i as WORD);
     let model = BabyModel {
         main_store,
         accumulator: 0,
@@ -95,7 +95,7 @@ fn test_relative_jump_in_range() {
 
 #[test]
 fn test_relative_jump_in_range_dispatch() {
-    let main_store: [i32; MEMORY_WORDS] = core::array::from_fn(|i| i as i32);
+    let main_store: [WORD; MEMORY_WORDS] = core::array::from_fn(|i| i as WORD);
     let model = BabyModel {
         main_store,
         accumulator: 0,
@@ -110,7 +110,7 @@ fn test_relative_jump_in_range_dispatch() {
 
 #[test]
 fn test_relative_jump_out_range() {
-    let main_store: [i32; MEMORY_WORDS] = core::array::from_fn(|i| i as i32);
+    let main_store: [WORD; MEMORY_WORDS] = core::array::from_fn(|i| i as WORD);
     let model = BabyModel {
         main_store,
         accumulator: 0,
@@ -124,7 +124,7 @@ fn test_relative_jump_out_range() {
 
 #[test]
 fn test_relative_jump_out_range_dispatch() {
-    let main_store: [i32; MEMORY_WORDS] = core::array::from_fn(|i| i as i32);
+    let main_store: [WORD; MEMORY_WORDS] = core::array::from_fn(|i| i as WORD);
     let model = BabyModel {
         main_store,
         accumulator: 0,
@@ -138,7 +138,7 @@ fn test_relative_jump_out_range_dispatch() {
 
 #[test]
 fn test_negate() {
-    let main_store: [i32; MEMORY_WORDS] = core::array::from_fn(|i| i as i32);
+    let main_store: [WORD; MEMORY_WORDS] = core::array::from_fn(|i| i as WORD);
     let model = BabyModel {
         main_store,
         accumulator: 0,
@@ -153,7 +153,7 @@ fn test_negate() {
 
 #[test]
 fn test_negate_dispatch() {
-    let main_store: [i32; MEMORY_WORDS] = core::array::from_fn(|i| i as i32);
+    let main_store: [WORD; MEMORY_WORDS] = core::array::from_fn(|i| i as WORD);
     let model = BabyModel {
         main_store,
         accumulator: 0,
@@ -168,7 +168,7 @@ fn test_negate_dispatch() {
 
 #[test]
 fn test_store() {
-    let main_store: [i32; MEMORY_WORDS] = core::array::from_fn(|i| i as i32);
+    let main_store: [WORD; MEMORY_WORDS] = core::array::from_fn(|i| i as WORD);
     let model = BabyModel {
         main_store,
         accumulator: 5,
@@ -183,7 +183,7 @@ fn test_store() {
 
 #[test]
 fn test_store_dispatch() {
-    let main_store: [i32; MEMORY_WORDS] = core::array::from_fn(|i| i as i32);
+    let main_store: [WORD; MEMORY_WORDS] = core::array::from_fn(|i| i as WORD);
     let model = BabyModel {
         main_store,
         accumulator: 5,
@@ -198,7 +198,7 @@ fn test_store_dispatch() {
 
 #[test]
 fn test_subtract() {
-    let main_store: [i32; MEMORY_WORDS] = core::array::from_fn(|i| i as i32);
+    let main_store: [WORD; MEMORY_WORDS] = core::array::from_fn(|i| i as WORD);
     let model = BabyModel {
         main_store,
         accumulator: 5,
@@ -213,7 +213,7 @@ fn test_subtract() {
 
 #[test]
 fn test_subtract_dispatch() {
-    let main_store: [i32; MEMORY_WORDS] = core::array::from_fn(|i| i as i32);
+    let main_store: [WORD; MEMORY_WORDS] = core::array::from_fn(|i| i as WORD);
     let model = BabyModel {
         main_store,
         accumulator: 5,
@@ -228,7 +228,7 @@ fn test_subtract_dispatch() {
 
 #[test]
 fn test_test_negative() {
-    let main_store: [i32; MEMORY_WORDS] = core::array::from_fn(|i| i as i32);
+    let main_store: [WORD; MEMORY_WORDS] = core::array::from_fn(|i| i as WORD);
     let model = BabyModel {
         main_store,
         accumulator: -5,
@@ -242,7 +242,7 @@ fn test_test_negative() {
 
 #[test]
 fn test_test_negative_dispatch() {
-    let main_store: [i32; MEMORY_WORDS] = core::array::from_fn(|i| i as i32);
+    let main_store: [WORD; MEMORY_WORDS] = core::array::from_fn(|i| i as WORD);
     let model = BabyModel {
         main_store,
         accumulator: -5,
@@ -256,7 +256,7 @@ fn test_test_negative_dispatch() {
 
 #[test]
 fn test_test_positive() {
-    let main_store: [i32; MEMORY_WORDS] = core::array::from_fn(|i| i as i32);
+    let main_store: [WORD; MEMORY_WORDS] = core::array::from_fn(|i| i as WORD);
     let model = BabyModel {
         main_store,
         accumulator: 5,
@@ -270,7 +270,7 @@ fn test_test_positive() {
 
 #[test]
 fn test_test_positive_dispatch() {
-    let main_store: [i32; MEMORY_WORDS] = core::array::from_fn(|i| i as i32);
+    let main_store: [WORD; MEMORY_WORDS] = core::array::from_fn(|i| i as WORD);
     let model = BabyModel {
         main_store,
         accumulator: 5,

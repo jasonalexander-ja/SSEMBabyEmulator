@@ -1,6 +1,6 @@
 [package]
 name = "baby-emulator"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Jason Alexander <jasonalexander.dev@gmail.com>"]
 edition = "2021"
 description = "An emulation library of the Manchester SSEM 'Baby'"
@@ -15,3 +15,9 @@ categories = ["emulators"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+
+[features]
+default = ["i32"]
+i32 = []
+i16 = []
+i8 = []

@@ -197,13 +197,13 @@ pub mod errors;
 /// Assembles a string of Baby asm to a [LinkerData]. 
 /// 
 /// This type is a tuple of a vector of [BabyInstruction][crate::core::instructions::BabyInstruction] - the assembled program,
-/// and [HashMap<String, i32>][std::collections::HashMap<String, i32>] - the values of all the tags. 
+/// and [HashMap<String, WORD>][std::collections::HashMap<String, WORD>] - the values of all the tags. 
 /// 
 /// Can assemble for both modern and original notation depending on `og_notation`. 
 /// 
 /// The [`Vec<BabyInstruction>`][std::vec::Vec<crate::core::instructions::BabyInstruction>] can be fed straight into 
 /// [BabyInstruction::to_numbers][crate::core::instructions::BabyInstruction::to_numbers] to return an
-/// array of [i32] that can be used to directly instantiate [BabyModel][crate::core::BabyModel]
+/// array of [WORD][crate::core::WORD] that can be used to directly instantiate [BabyModel][crate::core::BabyModel]
 /// via [BabyModel::new_with_program][crate::core::BabyModel::new_with_program] and 
 /// run the assembled program.
 /// 

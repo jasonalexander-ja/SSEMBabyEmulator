@@ -119,6 +119,20 @@ mod tests;
 /// The number of words in the memory used globally.  
 pub const MEMORY_WORDS: usize = 32;
 
+/// Size of the instruction field, in the original Baby it is the first 16 bits of the 32 bit word.  
+#[cfg(any(feature = "i32", feature = "i16"))]
+pub const INSTR_LEN: usize = 16;
+#[cfg(feature = "i8")]
+pub const INSTR_LEN: usize = 8;
+
+/// The size of the process word. 
+#[cfg(feature = "i32")]
+pub type WORD = i32;
+#[cfg(feature = "i16")]
+pub type WORD = i16;
+#[cfg(feature = "i8")]
+pub type WORD = i8;
+
 /// A result from [BabyModel] executing an instruction. 
 /// 
 /// Just a [Result] type, which is either a [BabyModel] of the updated model
@@ -142,10 +156,10 @@ pub type InstrResult = Result<BabyModel, BabyErrors>;
 pub struct BabyModel {
     /// The memory (RAM), this is just 32 words of 32 bits, 
     /// originally famously stored on a Williams Tube.  
-    pub main_store: [i32; MEMORY_WORDS],
+    pub main_store: [WORD; MEMORY_WORDS],
     /// The register where all mathematical results 
     /// are stored (negations and subtractions). 
-    pub accumulator: i32,
+    pub accumulator: WORD,
     /// The memory address of the instruction currently 
     /// being executed (program counter). 
     pub instruction_address: u16,
@@ -174,7 +188,7 @@ impl BabyModel {
     /// 
     /// * `main_store` - The custom memory to be initialised with. 
     /// 
-    pub fn new_with_program(main_store: [i32; MEMORY_WORDS]) -> BabyModel {
+    pub fn new_with_program(main_store: [WORD; MEMORY_WORDS]) -> BabyModel {
         BabyModel { 
             main_store,
             accumulator: 0,
@@ -254,8 +268,8 @@ impl BabyModel {
     }
 
     /// Decodes the instruction in [BabyModel].`instruction` from the numeric value 
-    /// to [BabyInstruction] and the [i32] value pointed to by the instruction operand. 
-    pub fn decode_instruction(&self) -> (i32, BabyInstruction) {
+    /// to [BabyInstruction] and the [WORD] value pointed to by the instruction operand. 
+    pub fn decode_instruction(&self) -> (WORD, BabyInstruction) {
         let instruction = BabyInstruction::from_number(self.instruction);
         let operand = instruction.get_operand();
         let operand_value = self.main_store[operand];
@@ -302,7 +316,7 @@ impl BabyModel {
         (model, BabyErrors::IterationExceeded(err))
     }
 
-    /// Takes a [BabyInstruction] and a dereferenced operand value [i32] and 
+    /// Takes a [BabyInstruction] and a dereferenced operand value [WORD] and 
     /// calls the correct instruction method.  
     /// 
     /// Returns the result of the method call, if [BabyInstruction::Stop] is 
@@ -312,7 +326,7 @@ impl BabyModel {
     /// * `instruction` - The instruction to execute. 
     /// * `operand_value` - The value from memory referenced by the actual operand. 
     /// 
-    pub fn dispatch_instruction(&self, instruction: BabyInstruction, operand_value: i32) -> InstrResult {
+    pub fn dispatch_instruction(&self, instruction: BabyInstruction, operand_value: WORD) -> InstrResult {
         let res = match instruction {
             BabyInstruction::Jump(_) => self.jump(operand_value),
             BabyInstruction::RelativeJump(_) => self.relative_jump(operand_value),
@@ -338,7 +352,7 @@ impl BabyModel {
     /// 
     /// * `address` - The memory address to jump to. 
     /// 
-    pub fn jump(&self, address: i32) -> BabyModel {
+    pub fn jump(&self, address: WORD) -> BabyModel {
         let main_store = self.main_store.clone();
         let instruction_address = address as u16 & 0x1F;
         let instruction = main_store[instruction_address as usize] as u16;
@@ -361,7 +375,7 @@ impl BabyModel {
     /// 
     /// * `offset` - The value to offset the [BabyModel].`instruction_address` to. 
     /// 
-    pub fn relative_jump(&self, offset: i32) -> BabyModel {
+    pub fn relative_jump(&self, offset: WORD) -> BabyModel {
         let main_store = self.main_store.clone();
         let instruction_address = (self.instruction_address + offset as u16) & 0x1F;
         let instruction = main_store[instruction_address as usize] as u16;
@@ -386,7 +400,7 @@ impl BabyModel {
     /// 
     /// * `value` - The value to negate. 
     /// 
-    pub fn negate(&self, value: i32) -> BabyModel {
+    pub fn negate(&self, value: WORD) -> BabyModel {
         let main_store = self.main_store.clone();
         let instruction_address = (self.instruction_address + 1) & 0x1F;
         let instruction = main_store[instruction_address as usize] as u16;
@@ -412,7 +426,7 @@ impl BabyModel {
     /// 
     /// * `address` - The address to store the accumulator to. 
     /// 
-    pub fn store(&self, address: i32) -> BabyModel {
+    pub fn store(&self, address: WORD) -> BabyModel {
         let address = (address & 0x1F) as usize;
         let mut main_store = self.main_store.clone();
         main_store[(address & 0x1F) as usize] = self.accumulator;
@@ -440,7 +454,7 @@ impl BabyModel {
     /// 
     /// * `value` - The value to subtract from the accumulator. 
     /// 
-    pub fn subtract(&self, value: i32) -> BabyModel {
+    pub fn subtract(&self, value: WORD) -> BabyModel {
         let main_store = self.main_store.clone();
         let instruction_address = (self.instruction_address + 1) & 0x1F;
         let instruction = main_store[instruction_address as usize] as u16;

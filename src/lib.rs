@@ -27,14 +27,26 @@
 //! ## Installation 
 //! 
 //! Command line: 
-//! ```text 
+//! ```bash 
 //! cargo add baby-emulator 
 //! ```
 //! 
 //! Cargo.toml: 
-//! ```text 
+//! ```toml 
 //! baby-emulator = "0.2.0" 
 //! ``` 
+//! 
+//! ### Features 
+//!
+//! As of version 2.1, variable bit lengths are supported on both the simulator and assembler, 
+//! either `i32` as per the original Baby, `i16` and `i8`, available by importing the library 
+//! the correspondingly named feature. 
+//!
+//! ```toml
+//! baby-emulator = { version = "0.2.1", features = ["i32"] }
+//! baby-emulator = { version = "0.2.1", features = ["i16"] }
+//! baby-emulator = { version = "0.2.1", features = ["i8"] }
+//! ```
 //! 
 //! ## Example 
 //! 
@@ -48,7 +60,7 @@
 //! The core of this library is [baby_emulator::core::BabyModel][crate::core::BabyModel], 
 //! this struct has fields representing all of the Baby's internal 
 //! registers and 32 word memory, you can initialise this struct with 
-//! an array of `[i32; 32]`, this array can contain the program code 
+//! an array of `[WORD; 32]`, this array can contain the program code 
 //! instructions starting at position 0. 
 //! 
 //! This example runs an example program that adds 5 to 5 and stores 
@@ -133,7 +145,6 @@
 //! }
 //! ```
 //! 
-
 
 /// Contains the core models and emulation functionality. 
 pub mod core;

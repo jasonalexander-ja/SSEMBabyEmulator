@@ -42,6 +42,8 @@ use errors::{
     ValueParseError,
 };
 
+use crate::core::WORD;
+
 
 /// Contains types for handling errors during parsing. 
 pub mod errors;
@@ -52,7 +54,7 @@ mod tests;
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
     /// A literal value. 
-    Value(i32),
+    Value(WORD),
     /// A reference to a [LineType::Tag] value E.G. `$SomeTag`.
     Tag(String),
 }
@@ -87,7 +89,7 @@ impl Value {
     /// 
     /// Returns a [ValueParseError] if it fails. 
     pub fn parse_hex(value: String) -> Result<Value, ValueParseError> {
-        let res = match i32::from_str_radix(&value, 16) {
+        let res = match WORD::from_str_radix(&value, 16) {
             Ok(v) => v,
             Err(_) => return Err(ValueParseError::InvalidHex(value.to_string()))
         };
@@ -98,7 +100,7 @@ impl Value {
     /// 
     /// Returns a [ValueParseError] if it fails. 
     pub fn parse_decimal(value: String) -> Result<Value, ValueParseError> {
-        match i32::from_str_radix(&value, 10) {
+        match WORD::from_str_radix(&value, 10) {
             Ok(v) => Ok(Value::Value(v)),
             Err(_) => Err(ValueParseError::InvalidDecimal(value.to_string()))
         }
@@ -108,7 +110,7 @@ impl Value {
     /// 
     /// Returns a [ValueParseError] if it fails. 
     pub fn parse_octal(value: String) -> Result<Value, ValueParseError> {
-        match i32::from_str_radix(&value, 8) {
+        match WORD::from_str_radix(&value, 8) {
             Ok(v) => Ok(Value::Value(v)),
             Err(_) => Err(ValueParseError::InvalidOctal(value.to_string()))
         }
@@ -118,7 +120,7 @@ impl Value {
     /// 
     /// Returns a [ValueParseError] if it fails. 
     pub fn parse_binary(value: String) -> Result<Value, ValueParseError> {
-        match i32::from_str_radix(&value, 2) {
+        match WORD::from_str_radix(&value, 2) {
             Ok(v) => Ok(Value::Value(v)),
             Err(_) => Err(ValueParseError::InvalidBinary(value.to_string()))
         }

@@ -10,7 +10,7 @@
 //! an array that can be used to instantiate a new baby model with 
 //! a program loaded into the stack. 
 
-use crate::core::MEMORY_WORDS;
+use crate::core::{MEMORY_WORDS, INSTR_LEN, WORD};
 
 
 #[cfg(test)]
@@ -42,7 +42,7 @@ pub enum BabyInstruction {
     /// Stop. 
     Stop,
     /// A helper instruction denoting a program data in memory. 
-    AbsoluteValue(i32),
+    AbsoluteValue(WORD),
 }
 
 impl BabyInstruction {
@@ -85,7 +85,7 @@ impl BabyInstruction {
     /// * `value` - The instruction to be decoded. 
     /// 
     pub fn from_number(value: u16) -> BabyInstruction {
-        let opcode = value >> 13;
+        let opcode = value >> (INSTR_LEN - 3);
         let operand = value & 0x1F;
         let res = match opcode {
             0b000 => BabyInstruction::Jump(operand),
@@ -104,15 +104,16 @@ impl BabyInstruction {
     /// Converts the instruction into the relevant value, and incorporates 
     /// the memory address operand, returning the full program instruction 
     /// that can be executed. 
-    pub fn to_number(&self) -> i32 {
+    pub fn to_number(&self) -> WORD {
+        let instr_shift = INSTR_LEN - 3;
         match self {
-            BabyInstruction::Jump(operand) => (0b000 << 13) | (operand & 0x1F) as i32,
-            BabyInstruction::RelativeJump(operand) => (0b100 << 13) | (operand & 0x1F) as i32,
-            BabyInstruction::Negate(operand) => (0b010 << 13) | (operand & 0x1F) as i32,
-            BabyInstruction::Store(operand) => (0b110 << 13) | (operand & 0x1F) as i32,
-            BabyInstruction::Subtract(operand) => (0b001 << 13) | (operand & 0x1F) as i32,
-            BabyInstruction::SkipNextIfNegative => 0b011 << 13 as i32,
-            BabyInstruction::Stop => 0b111 << 13 as i32,
+            BabyInstruction::Jump(operand) => (0b000 << instr_shift) | (operand & 0x1F) as WORD,
+            BabyInstruction::RelativeJump(operand) => (0b100 << instr_shift) | (operand & 0x1F) as WORD,
+            BabyInstruction::Negate(operand) => (0b010 << instr_shift) | (operand & 0x1F) as WORD,
+            BabyInstruction::Store(operand) => (0b110 << instr_shift) | (operand & 0x1F) as WORD,
+            BabyInstruction::Subtract(operand) => (0b001 << instr_shift) | (operand & 0x1F) as WORD,
+            BabyInstruction::SkipNextIfNegative => 0b011 << instr_shift as WORD,
+            BabyInstruction::Stop => 0b111 << instr_shift as WORD,
             BabyInstruction::AbsoluteValue(v) => *v
         }
     }
@@ -145,7 +146,7 @@ impl BabyInstruction {
     /// let model = BabyModel::new_with_program(main_store);
     /// ```
     /// 
-    pub fn to_numbers(instructions: Vec<BabyInstruction>) -> [i32; MEMORY_WORDS] {
+    pub fn to_numbers(instructions: Vec<BabyInstruction>) -> [WORD; MEMORY_WORDS] {
         let res: [usize; MEMORY_WORDS] = core::array::from_fn(|i| i + 1);
         res.map(|i| {
             if let Some(instr) = instructions.get(i - 1) { instr.to_number() }
