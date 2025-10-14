@@ -33,7 +33,7 @@
 //! 
 //! Cargo.toml: 
 //! ```toml 
-//! baby-emulator = "0.2.0" 
+//! baby-emulator = "0.2.1" 
 //! ``` 
 //! 
 //! ### Features 
