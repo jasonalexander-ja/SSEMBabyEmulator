@@ -85,7 +85,7 @@ impl BabyInstruction {
     /// * `value` - The instruction to be decoded. 
     /// 
     pub fn from_number(value: u16) -> BabyInstruction {
-        let opcode = value >> (INSTR_LEN - 3);
+        let opcode = (value >> (INSTR_LEN - 3)) & 7;
         let operand = value & 0x1F;
         let res = match opcode {
             0b000 => BabyInstruction::Jump(operand),

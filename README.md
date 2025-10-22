@@ -102,7 +102,7 @@ modern notation, then running the resultant program;
 see the `baby_emulator::assembler` docs for more information:
 
 ```rust
-use baby_emulator::assembler::assemble; 
+use baby_emulator::assembler::{assemble, linker::LinkerData}; 
 use baby_emulator::core::{BabyModel, instructions::BabyInstruction};
  
  
@@ -128,7 +128,7 @@ abs 0d-10
 
 fn main() {
     let instructions = match assemble(&String::from(ASM), false) {
-        Ok(v) => v,
+        Ok(LinkerData(v, _)) => v,
         Err(e) => { println!("{}", e.describe(true)); return; }
     };
     let main_store = BabyInstruction::to_numbers(instructions);

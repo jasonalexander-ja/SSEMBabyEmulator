@@ -120,13 +120,15 @@ mod tests;
 pub const MEMORY_WORDS: usize = 32;
 
 /// Size of the instruction field, in the original Baby it is the first 16 bits of the 32 bit word.  
-#[cfg(any(feature = "i32", feature = "i16"))]
+#[cfg(not(feature = "i8"))]
 pub const INSTR_LEN: usize = 16;
 #[cfg(feature = "i8")]
 pub const INSTR_LEN: usize = 8;
 
+pub const INSTR_MASK: u16 = 0xFFFF >> (16 - INSTR_LEN);
+
 /// The size of the process word. 
-#[cfg(feature = "i32")]
+#[cfg(all(not(feature = "i16"), not(feature = "i8")))]
 pub type WORD = i32;
 #[cfg(feature = "i16")]
 pub type WORD = i16;
@@ -360,7 +362,7 @@ impl BabyModel {
             main_store,
             accumulator: self.accumulator,
             instruction_address,
-            instruction
+            instruction: instruction & INSTR_MASK
         }
     }
 
@@ -383,7 +385,7 @@ impl BabyModel {
             main_store,
             accumulator: self.accumulator,
             instruction_address,
-            instruction
+            instruction: instruction & INSTR_MASK
         }
     }
 
@@ -408,7 +410,7 @@ impl BabyModel {
             main_store,
             accumulator: value.neg(),
             instruction_address,
-            instruction
+            instruction: instruction & INSTR_MASK
         }
     }
 
@@ -436,7 +438,7 @@ impl BabyModel {
             main_store,
             accumulator: self.accumulator,
             instruction_address,
-            instruction
+            instruction: instruction & INSTR_MASK
         }
     }
 
@@ -462,7 +464,7 @@ impl BabyModel {
             main_store,
             accumulator: self.accumulator - value,
             instruction_address,
-            instruction
+            instruction: instruction & INSTR_MASK
         }
     }
 
@@ -487,7 +489,7 @@ impl BabyModel {
             main_store,
             accumulator: self.accumulator,
             instruction_address,
-            instruction
+            instruction: instruction & INSTR_MASK
         }
     }
 
